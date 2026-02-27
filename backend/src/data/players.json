@@ -1,0 +1,566 @@
+{
+    "MI Warriors": [
+        {
+            "id": "mw1",
+            "name": "Sanskar Mehta",
+            "role": "BAT",
+            "credits": 10.0
+        },
+        {
+            "id": "mw2",
+            "name": "Utsav Desai",
+            "role": "BAT",
+            "credits": 9.5
+        },
+        {
+            "id": "mw3",
+            "name": "Abhas Mathur",
+            "role": "BAT",
+            "credits": 9.0
+        },
+        {
+            "id": "mw4",
+            "name": "Nagendra Giri",
+            "role": "AR",
+            "credits": 9.5
+        },
+        {
+            "id": "mw5",
+            "name": "Thakkar Akash H.",
+            "role": "BOWL",
+            "credits": 9.0
+        },
+        {
+            "id": "mw6",
+            "name": "Kshitij Modi",
+            "role": "BAT",
+            "credits": 8.5
+        },
+        {
+            "id": "mw7",
+            "name": "Bhavya Jain",
+            "role": "BAT",
+            "credits": 8.5
+        },
+        {
+            "id": "mw8",
+            "name": "Priyank Suthar",
+            "role": "BOWL",
+            "credits": 8.5
+        },
+        {
+            "id": "mw9",
+            "name": "Dip Rabari",
+            "role": "BOWL",
+            "credits": 8.0
+        },
+        {
+            "id": "mw10",
+            "name": "Sanjay Prajapati",
+            "role": "BAT",
+            "credits": 8.0
+        },
+        {
+            "id": "mw11",
+            "name": "Dheer Kothari",
+            "role": "AR",
+            "credits": 8.5
+        },
+        {
+            "id": "mw12",
+            "name": "Karan Darji",
+            "role": "AR",
+            "credits": 8.0
+        },
+        {
+            "id": "mw13",
+            "name": "Mayur Rajput",
+            "role": "WK",
+            "credits": 9.0
+        },
+        {
+            "id": "mw14",
+            "name": "Tirth Shah",
+            "role": "BOWL",
+            "credits": 8.0
+        },
+        {
+            "id": "mw15",
+            "name": "Paras Anadani",
+            "role": "BOWL",
+            "credits": 8.0
+        }
+    ],
+    "MI Smashers": [
+        {
+            "id": "ms1",
+            "name": "Nihir Patel",
+            "role": "BAT",
+            "credits": 10.0
+        },
+        {
+            "id": "ms2",
+            "name": "Chirag Murari",
+            "role": "BAT",
+            "credits": 9.5
+        },
+        {
+            "id": "ms3",
+            "name": "Khushal Koriya",
+            "role": "BOWL",
+            "credits": 9.0
+        },
+        {
+            "id": "ms4",
+            "name": "Piyush Selarka",
+            "role": "AR",
+            "credits": 9.0
+        },
+        {
+            "id": "ms5",
+            "name": "Aman Singh Thakur",
+            "role": "BAT",
+            "credits": 8.5
+        },
+        {
+            "id": "ms6",
+            "name": "Nikhil Gohil",
+            "role": "BOWL",
+            "credits": 8.5
+        },
+        {
+            "id": "ms7",
+            "name": "Smit Thakkar",
+            "role": "WK",
+            "credits": 9.0
+        },
+        {
+            "id": "ms8",
+            "name": "Maulik Togadiya",
+            "role": "BOWL",
+            "credits": 8.5
+        },
+        {
+            "id": "ms9",
+            "name": "Mink Virparia",
+            "role": "AR",
+            "credits": 8.5
+        },
+        {
+            "id": "ms10",
+            "name": "Vimal Prajapati",
+            "role": "BAT",
+            "credits": 8.0
+        },
+        {
+            "id": "ms11",
+            "name": "Vishal Parmar",
+            "role": "BOWL",
+            "credits": 8.0
+        },
+        {
+            "id": "ms12",
+            "name": "Aryan Shah",
+            "role": "BAT",
+            "credits": 8.5
+        },
+        {
+            "id": "ms13",
+            "name": "Chirag Prajapati",
+            "role": "AR",
+            "credits": 8.0
+        },
+        {
+            "id": "ms14",
+            "name": "Chirag Rami",
+            "role": "BOWL",
+            "credits": 8.0
+        },
+        {
+            "id": "ms15",
+            "name": "Kamlesh Puraswani",
+            "role": "BAT",
+            "credits": 9.0
+        }
+    ],
+    "300.EXE": [
+        {
+            "id": "ex1",
+            "name": "Jay Thakkar",
+            "role": "BAT",
+            "credits": 10.0
+        },
+        {
+            "id": "ex2",
+            "name": "Dharma Suthar",
+            "role": "AR",
+            "credits": 9.5
+        },
+        {
+            "id": "ex3",
+            "name": "Vishal Prajapati",
+            "role": "BOWL",
+            "credits": 9.0
+        },
+        {
+            "id": "ex4",
+            "name": "Anish Panchal",
+            "role": "BAT",
+            "credits": 9.0
+        },
+        {
+            "id": "ex5",
+            "name": "Meet Vora",
+            "role": "WK",
+            "credits": 9.0
+        },
+        {
+            "id": "ex6",
+            "name": "Suraj Barnwal",
+            "role": "BOWL",
+            "credits": 8.5
+        },
+        {
+            "id": "ex7",
+            "name": "Yashang Vyas",
+            "role": "BAT",
+            "credits": 8.5
+        },
+        {
+            "id": "ex8",
+            "name": "Hitesh Rabari",
+            "role": "AR",
+            "credits": 10.0
+        },
+        {
+            "id": "ex9",
+            "name": "Kundan Kumar Singh",
+            "role": "BOWL",
+            "credits": 8.5
+        },
+        {
+            "id": "ex10",
+            "name": "Manish Singh",
+            "role": "BAT",
+            "credits": 8.0
+        },
+        {
+            "id": "ex11",
+            "name": "Nisarg Soni",
+            "role": "BOWL",
+            "credits": 8.0
+        },
+        {
+            "id": "ex12",
+            "name": "Ashay Patel",
+            "role": "AR",
+            "credits": 8.5
+        },
+        {
+            "id": "ex13",
+            "name": "Kuldeep Rajput",
+            "role": "BOWL",
+            "credits": 8.0
+        },
+        {
+            "id": "ex14",
+            "name": "Nimesh Vaniya",
+            "role": "BAT",
+            "credits": 8.0
+        },
+        {
+            "id": "ex15",
+            "name": "Jaydeep Karia",
+            "role": "WK",
+            "credits": 8.5
+        }
+    ],
+    "Collab Kings": [
+        {
+            "id": "ck1",
+            "name": "Neeraj Joshi",
+            "role": "BAT",
+            "credits": 10.0
+        },
+        {
+            "id": "ck2",
+            "name": "Jeet Parikh",
+            "role": "BAT",
+            "credits": 9.5
+        },
+        {
+            "id": "ck3",
+            "name": "Harshit Sampat",
+            "role": "BOWL",
+            "credits": 9.5
+        },
+        {
+            "id": "ck4",
+            "name": "Paresh Panchal",
+            "role": "BOWL",
+            "credits": 9.0
+        },
+        {
+            "id": "ck5",
+            "name": "Gyansingh Baghel",
+            "role": "AR",
+            "credits": 9.0
+        },
+        {
+            "id": "ck6",
+            "name": "Sagar Patel",
+            "role": "BAT",
+            "credits": 8.5
+        },
+        {
+            "id": "ck7",
+            "name": "Dipesh Jethva",
+            "role": "BOWL",
+            "credits": 8.5
+        },
+        {
+            "id": "ck8",
+            "name": "Nikunj Jogi",
+            "role": "AR",
+            "credits": 8.5
+        },
+        {
+            "id": "ck9",
+            "name": "Vikash",
+            "role": "BAT",
+            "credits": 10.0
+        },
+        {
+            "id": "ck10",
+            "name": "Dev Bhatt",
+            "role": "WK",
+            "credits": 9.0
+        },
+        {
+            "id": "ck11",
+            "name": "Aman Patel",
+            "role": "BAT",
+            "credits": 8.0
+        },
+        {
+            "id": "ck12",
+            "name": "Arpit Bobade",
+            "role": "BOWL",
+            "credits": 8.0
+        },
+        {
+            "id": "ck13",
+            "name": "Manoj Rajput",
+            "role": "AR",
+            "credits": 8.0
+        },
+        {
+            "id": "ck14",
+            "name": "Ashutosh Jaiswal",
+            "role": "BAT",
+            "credits": 8.0
+        },
+        {
+            "id": "ck15",
+            "name": "Ankit Dave",
+            "role": "BOWL",
+            "credits": 8.0
+        },
+        {
+            "id": "ck16",
+            "name": "Vijaya K. Gongada",
+            "role": "AR",
+            "credits": 8.5
+        }
+    ],
+    "Collab Titans": [
+        {
+            "id": "ct1",
+            "name": "Akash Patel",
+            "role": "BAT",
+            "credits": 10.0
+        },
+        {
+            "id": "ct2",
+            "name": "Banti Chaudhary",
+            "role": "BAT",
+            "credits": 9.5
+        },
+        {
+            "id": "ct3",
+            "name": "Bhavin Vala",
+            "role": "BOWL",
+            "credits": 9.5
+        },
+        {
+            "id": "ct4",
+            "name": "Dinesh Sawant",
+            "role": "BAT",
+            "credits": 9.0
+        },
+        {
+            "id": "ct5",
+            "name": "Hasmukh Suthar",
+            "role": "BOWL",
+            "credits": 8.5
+        },
+        {
+            "id": "ct6",
+            "name": "Vivek Chauhan",
+            "role": "AR",
+            "credits": 9.5
+        },
+        {
+            "id": "ct7",
+            "name": "Sunil",
+            "role": "BAT",
+            "credits": 10.0
+        },
+        {
+            "id": "ct8",
+            "name": "Sunny Panchal",
+            "role": "BOWL",
+            "credits": 8.5
+        },
+        {
+            "id": "ct9",
+            "name": "Debtanu Adak",
+            "role": "WK",
+            "credits": 9.0
+        },
+        {
+            "id": "ct10",
+            "name": "Pratik Patel",
+            "role": "BAT",
+            "credits": 8.5
+        },
+        {
+            "id": "ct11",
+            "name": "Satyam Kumar",
+            "role": "BOWL",
+            "credits": 8.0
+        },
+        {
+            "id": "ct12",
+            "name": "Govind Rajput",
+            "role": "AR",
+            "credits": 8.0
+        },
+        {
+            "id": "ct13",
+            "name": "Bhavesh Vadher",
+            "role": "BAT",
+            "credits": 10.0
+        },
+        {
+            "id": "ct14",
+            "name": "Shaikh Mo Asad M",
+            "role": "BOWL",
+            "credits": 8.0
+        },
+        {
+            "id": "ct15",
+            "name": "Vivek A. Shekhat",
+            "role": "BAT",
+            "credits": 8.0
+        },
+        {
+            "id": "ct16",
+            "name": "Chirag Patel",
+            "role": "AR",
+            "credits": 8.5
+        }
+    ],
+    "300 Dakaits": [
+        {
+            "id": "dk1",
+            "name": "Aditya Jani",
+            "role": "BAT",
+            "credits": 10.0
+        },
+        {
+            "id": "dk2",
+            "name": "Parth Bapodara",
+            "role": "BAT",
+            "credits": 9.5
+        },
+        {
+            "id": "dk3",
+            "name": "Jaydeep Chandela",
+            "role": "BOWL",
+            "credits": 9.5
+        },
+        {
+            "id": "dk4",
+            "name": "Ansh Shah",
+            "role": "AR",
+            "credits": 9.0
+        },
+        {
+            "id": "dk5",
+            "name": "Varun Patel",
+            "role": "BAT",
+            "credits": 8.5
+        },
+        {
+            "id": "dk6",
+            "name": "Uzer Khan",
+            "role": "WK",
+            "credits": 9.5
+        },
+        {
+            "id": "dk7",
+            "name": "Abhishek K.",
+            "role": "BOWL",
+            "credits": 8.5
+        },
+        {
+            "id": "dk8",
+            "name": "Dhruvin Dave",
+            "role": "BAT",
+            "credits": 8.5
+        },
+        {
+            "id": "dk9",
+            "name": "Vijay Sadhu",
+            "role": "BOWL",
+            "credits": 8.5
+        },
+        {
+            "id": "dk10",
+            "name": "Sumeet Thakkar",
+            "role": "AR",
+            "credits": 8.5
+        },
+        {
+            "id": "dk11",
+            "name": "Patel Ayush R.",
+            "role": "BAT",
+            "credits": 8.0
+        },
+        {
+            "id": "dk12",
+            "name": "Mehul Sir",
+            "role": "BAT",
+            "credits": 8.5
+        },
+        {
+            "id": "dk13",
+            "name": "Dipak Prajapati",
+            "role": "AR",
+            "credits": 10.0
+        },
+        {
+            "id": "dk14",
+            "name": "Jwalant Mehta",
+            "role": "BOWL",
+            "credits": 8.5
+        },
+        {
+            "id": "dk15",
+            "name": "Vaibhav Trivedi",
+            "role": "BAT",
+            "credits": 8.0
+        }
+    ]
+}

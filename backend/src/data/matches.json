@@ -1,0 +1,146 @@
+[
+    {
+        "id": "match_1",
+        "title": "Collab Kings vs Collab Titans",
+        "league": "Collab Series",
+        "date": "Fri, 13 Mar",
+        "time": "8 PM - 10 PM",
+        "teams": [
+            "Collab Kings",
+            "Collab Titans"
+        ],
+        "status": "upcoming"
+    },
+    {
+        "id": "match_2",
+        "title": "300 Dakaits vs MI Warriors",
+        "league": "Collab Series",
+        "date": "Fri, 13 Mar",
+        "time": "10 PM - 12 AM",
+        "teams": [
+            "300 Dakaits",
+            "MI Warriors"
+        ],
+        "status": "upcoming"
+    },
+    {
+        "id": "match_3",
+        "title": "Collab Kings vs 300.EXE",
+        "league": "Collab Series",
+        "date": "Sun, 15 Mar",
+        "time": "5 PM - 7 PM",
+        "teams": [
+            "Collab Kings",
+            "300.EXE"
+        ],
+        "status": "upcoming"
+    },
+    {
+        "id": "match_4",
+        "title": "MI Smashers vs 300 Dakaits",
+        "league": "Collab Series",
+        "date": "Sun, 15 Mar",
+        "time": "7 PM - 9 PM",
+        "teams": [
+            "MI Smashers",
+            "300 Dakaits"
+        ],
+        "status": "upcoming"
+    },
+    {
+        "id": "match_5",
+        "title": "MI Smashers vs 300.EXE",
+        "league": "Collab Series",
+        "date": "Fri, 20 Mar",
+        "time": "7 PM - 8:30 PM",
+        "teams": [
+            "MI Smashers",
+            "300.EXE"
+        ],
+        "status": "upcoming"
+    },
+    {
+        "id": "match_6",
+        "title": "MI Warriors vs Collab Kings",
+        "league": "Collab Series",
+        "date": "Fri, 20 Mar",
+        "time": "8:45 PM - 10:15 PM",
+        "teams": [
+            "MI Warriors",
+            "Collab Kings"
+        ],
+        "status": "upcoming"
+    },
+    {
+        "id": "match_7",
+        "title": "300 Dakaits vs Collab Titans",
+        "league": "Collab Series",
+        "date": "Fri, 20 Mar",
+        "time": "10:30 PM - 12 AM",
+        "teams": [
+            "300 Dakaits",
+            "Collab Titans"
+        ],
+        "status": "upcoming"
+    },
+    {
+        "id": "match_8",
+        "title": "300.EXE vs MI Warriors",
+        "league": "Collab Series",
+        "date": "Sat, 21 Mar",
+        "time": "5 PM - 7 PM",
+        "teams": [
+            "300.EXE",
+            "MI Warriors"
+        ],
+        "status": "upcoming"
+    },
+    {
+        "id": "match_9",
+        "title": "MI Smashers vs Collab Titans",
+        "league": "Collab Series",
+        "date": "Sat, 21 Mar",
+        "time": "7 PM - 9 PM",
+        "teams": [
+            "MI Smashers",
+            "Collab Titans"
+        ],
+        "status": "upcoming"
+    },
+    {
+        "id": "match_10",
+        "title": "Rank 1 vs Rank 4",
+        "league": "Semifinals",
+        "date": "Fri, 27 Mar",
+        "time": "8 PM - 10 PM",
+        "teams": [
+            "Rank 1",
+            "Rank 4"
+        ],
+        "status": "upcoming"
+    },
+    {
+        "id": "match_11",
+        "title": "Rank 2 vs Rank 3",
+        "league": "Semifinals",
+        "date": "Fri, 27 Mar",
+        "time": "10 PM - 12 AM",
+        "teams": [
+            "Rank 2",
+            "Rank 3"
+        ],
+        "status": "upcoming"
+    },
+    {
+        "id": "match_12",
+        "title": "Winner SF1 vs Winner SF2",
+        "league": "Grand Finale",
+        "date": "Sat, 28 Mar",
+        "time": "8 PM - 11 PM",
+        "teams": [
+            "Winner SF1",
+            "Winner SF2"
+        ],
+        "status": "upcoming"
+    }
+]
