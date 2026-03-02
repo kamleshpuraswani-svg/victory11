@@ -1,98 +1,316 @@
-import { Image } from 'expo-image';
-import { Platform, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { Stack, useRouter } from 'expo-router';
+import { getAuthToken, clearAuthData } from '../../utils/storage';
+import axios from 'axios';
+import { API_URL } from '../../constants/Config';
 
-import { HelloWave } from '@/components/hello-wave';
-import ParallaxScrollView from '@/components/parallax-scroll-view';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Link } from 'expo-router';
+const ALL_MATCHES = [
+  {
+    "id": "match_1",
+    "league": "COLLAB SERIES",
+    "date": "Fri, 13 Mar",
+    "time": "8 PM - 10 PM",
+    "teams": ["Collab Kings", "Collab Titans"]
+  },
+  {
+    "id": "match_2",
+    "league": "COLLAB SERIES",
+    "date": "Fri, 13 Mar",
+    "time": "10 PM - 12 AM",
+    "teams": ["300 Dakaits", "MI Warriors"]
+  },
+  {
+    "id": "match_3",
+    "league": "COLLAB SERIES",
+    "date": "Sun, 15 Mar",
+    "time": "5 PM - 7 PM",
+    "teams": ["Collab Kings", "300.EXE"]
+  },
+  {
+    "id": "match_4",
+    "league": "COLLAB SERIES",
+    "date": "Sun, 15 Mar",
+    "time": "7 PM - 9 PM",
+    "teams": ["MI Smashers", "300 Dakaits"]
+  },
+  {
+    "id": "match_5",
+    "league": "COLLAB SERIES",
+    "date": "Fri, 20 Mar",
+    "time": "7 PM - 8:30 PM",
+    "teams": ["MI Smashers", "300.EXE"]
+  },
+  {
+    "id": "match_6",
+    "league": "COLLAB SERIES",
+    "date": "Fri, 20 Mar",
+    "time": "8:45 PM - 10:15 PM",
+    "teams": ["MI Warriors", "Collab Kings"]
+  },
+  {
+    "id": "match_7",
+    "league": "COLLAB SERIES",
+    "date": "Fri, 20 Mar",
+    "time": "10:30 PM - 12 AM",
+    "teams": ["300 Dakaits", "Collab Titans"]
+  },
+  {
+    "id": "match_8",
+    "league": "COLLAB SERIES",
+    "date": "Sat, 21 Mar",
+    "time": "5 PM - 7 PM",
+    "teams": ["300.EXE", "MI Warriors"]
+  },
+  {
+    "id": "match_9",
+    "league": "COLLAB SERIES",
+    "date": "Sat, 21 Mar",
+    "time": "7 PM - 9 PM",
+    "teams": ["MI Smashers", "Collab Titans"]
+  },
+  {
+    "id": "match_10",
+    "league": "SEMIFINALS",
+    "date": "Fri, 27 Mar",
+    "time": "8 PM - 10 PM",
+    "teams": ["Rank 1", "Rank 4"]
+  },
+  {
+    "id": "match_11",
+    "league": "SEMIFINALS",
+    "date": "Fri, 27 Mar",
+    "time": "10 PM - 12 AM",
+    "teams": ["Rank 2", "Rank 3"]
+  },
+  {
+    "id": "match_12",
+    "league": "GRAND FINALE",
+    "date": "Sat, 28 Mar",
+    "time": "8 PM - 11 PM",
+    "teams": ["Winner SF1", "Winner SF2"]
+  }
+];
 
-export default function HomeScreen() {
+export default function MatchList() {
+  const router = useRouter();
+  const [isReady, setIsReady] = useState(false);
+  const [matches, setMatches] = useState(ALL_MATCHES);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function initialize() {
+      try {
+        const token = await getAuthToken();
+        if (!token) {
+          router.replace('/');
+          return;
+        }
+
+        // Fetch real matches from API
+        try {
+          const response = await axios.get(`${API_URL}/matches/upcoming`);
+          if (response.data && response.data.matches) {
+            setMatches(response.data.matches);
+          }
+        } catch (apiErr) {
+          console.error('Failed to fetch matches from API, using fallback:', apiErr);
+          // Fallback is already in state as ALL_MATCHES
+        }
+
+        setIsReady(true);
+      } catch (error) {
+        console.error('Initialization error', error);
+        router.replace('/login');
+      } finally {
+        setLoading(false);
+      }
+    }
+    initialize();
+  }, []);
+
+  if (loading || !isReady) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: '#f0f0f0' }}>
+        <ActivityIndicator size="large" color="#4caf50" />
+        <Text style={{ marginTop: 10, color: '#666' }}>Loading matches...</Text>
+      </View>
+    );
+  }
+
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({
-              ios: 'cmd + d',
-              android: 'cmd + m',
-              web: 'F12',
+    <View style={styles.container}>
+      <Stack.Screen options={{ title: 'Upcoming Matches (LIVE)' }} />
+      <FlatList
+        data={matches}
+        keyExtractor={(item) => item.id?.toString() || Math.random().toString()}
+        ListHeaderComponent={
+          <View style={styles.header}>
+            <TouchableOpacity onPress={async () => {
+              await clearAuthData();
+              router.replace('/login');
+            }} style={styles.logoutBtn}>
+              <Text style={styles.logoutText}>SIGN OUT</Text>
+            </TouchableOpacity>
+            <Text style={styles.headerTitle}>MICL - Upcoming Matches</Text>
+            <Text style={styles.headerTagline}>Big Wins. Big Thrills. Play MICL 2026! 🏏🏆</Text>
+          </View>
+        }
+        renderItem={({ item }) => (
+          <TouchableOpacity
+            style={styles.matchCard}
+            onPress={() => router.push({
+              pathname: '/contests',
+              params: { matchId: item.id, teamA: item.teams[0], teamB: item.teams[1] }
             })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <Link href="/modal">
-          <Link.Trigger>
-            <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-          </Link.Trigger>
-          <Link.Preview />
-          <Link.Menu>
-            <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
-            <Link.MenuAction
-              title="Share"
-              icon="square.and.arrow.up"
-              onPress={() => alert('Share pressed')}
-            />
-            <Link.Menu title="More" icon="ellipsis">
-              <Link.MenuAction
-                title="Delete"
-                icon="trash"
-                destructive
-                onPress={() => alert('Delete pressed')}
-              />
-            </Link.Menu>
-          </Link.Menu>
-        </Link>
+          >
+            <View style={styles.cardHeader}>
+              <Text style={styles.leagueName}>{item.league || 'Series'}</Text>
+              <Text style={styles.matchTime}>{item.time || 'TBD'}</Text>
+            </View>
 
-        <ThemedText>
-          {`Tap the Explore tab to learn more about what's included in this starter app.`}
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          {`When you're ready, run `}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+            <View style={styles.matchMain}>
+              <View style={styles.teamContainer}>
+                <Text style={styles.teamText}>{item.teams?.[0] || 'TBD'}</Text>
+              </View>
+              <Text style={styles.vsText}>VS</Text>
+              <View style={styles.teamContainer}>
+                <Text style={styles.teamText}>{item.teams?.[1] || 'TBD'}</Text>
+              </View>
+            </View>
+            <View style={styles.cardFooter}>
+              <Text style={styles.matchDate}>{item.date || 'Soon'}</Text>
+              <TouchableOpacity
+                style={styles.myTeamsBtn}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  router.push({
+                    pathname: '/my-teams',
+                    params: { matchId: item.id }
+                  });
+                }}
+              >
+                <Text style={styles.myTeamsBtnText}>MY TEAMS</Text>
+              </TouchableOpacity>
+            </View>
+          </TouchableOpacity>
+        )}
+        contentContainerStyle={{ padding: 15 }}
+      />
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  titleContainer: {
+  container: { flex: 1, backgroundColor: '#f1f5f9' },
+  header: {
+    backgroundColor: '#1e293b',
+    padding: 25,
+    borderRadius: 20,
+    marginBottom: 20,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 10,
+    elevation: 5
+  },
+  headerTitle: {
+    fontSize: 22,
+    fontWeight: '900',
+    color: '#fbbf24', // Gold Color
+    textAlign: 'center',
+    textTransform: 'uppercase',
+    letterSpacing: 1
+  },
+  headerTagline: {
+    fontSize: 14,
+    color: '#cbd5e1', // Light grayish Slate
+    textAlign: 'center',
+    marginTop: 8,
+    fontWeight: '500',
+    fontStyle: 'italic'
+  },
+  matchCard: {
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    padding: 15,
+    marginBottom: 16,
+    elevation: 4,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    borderLeftWidth: 5,
+    borderLeftColor: '#4caf50'
+  },
+  cardHeader: {
     flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    gap: 8,
+    borderBottomWidth: 1,
+    borderBottomColor: '#f1f1f1',
+    paddingBottom: 10,
+    marginBottom: 10
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  leagueName: { fontSize: 13, fontWeight: '600', color: '#777', textTransform: 'uppercase' },
+  matchTime: { fontSize: 12, color: '#4caf50', fontWeight: 'bold' },
+  matchMain: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  teamContainer: { flex: 1, alignItems: 'center' },
+  teamText: { fontSize: 18, fontWeight: '700', color: '#333', textAlign: 'center' },
+  vsText: {
+    fontSize: 14,
+    color: '#fff',
+    fontWeight: 'bold',
+    backgroundColor: '#e91e63',
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    textAlign: 'center',
+    lineHeight: 30,
+    marginHorizontal: 10
   },
+  cardFooter: {
+    backgroundColor: '#f9f9f9',
+    marginHorizontal: -15,
+    marginBottom: -15,
+    padding: 10,
+    borderBottomLeftRadius: 16,
+    borderBottomRightRadius: 16,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center'
+  },
+  matchDate: { fontSize: 13, color: '#555', fontWeight: '500' },
+  myTeamsBtn: {
+    backgroundColor: '#fff',
+    borderWidth: 1,
+    borderColor: '#4caf50',
+    paddingHorizontal: 12,
+    paddingVertical: 5,
+    borderRadius: 20,
+  },
+  myTeamsBtnText: {
+    color: '#4caf50',
+    fontSize: 12,
+    fontWeight: 'bold'
+  },
+  logoutBtn: {
+    alignSelf: 'flex-end',
+    backgroundColor: 'rgba(251, 191, 36, 0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: 'rgba(251, 191, 36, 0.5)',
+    marginBottom: 8
+  },
+  logoutText: {
+    color: '#fbbf24',
+    fontWeight: '800',
+    fontSize: 10
+  }
 });

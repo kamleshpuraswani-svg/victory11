@@ -1,23 +1,23 @@
 {
   "expo": {
-    "name": "Victory11",
-    "slug": "victory11",
+    "name": "MICL 2026",
+    "slug": "micl-2026",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "victory11",
+    "scheme": "micl2026",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.kamlesh.victory11"
+      "bundleIdentifier": "com.kamlesh.micl2026"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#10b981",
+        "backgroundColor": "#1e293b",
         "foregroundImage": "./assets/images/icon.png"
       },
-      "package": "com.kamlesh.victory11",
+      "package": "com.kamlesh.micl2026",
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false
     },

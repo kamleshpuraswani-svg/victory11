@@ -1,0 +1,90 @@
+const express = require('express');
+const router = express.Router();
+const jwt = require('jsonwebtoken');
+const { User } = require('../models/schema');
+
+// Middleware to verify admin role
+const authenticateAdmin = async (req, res, next) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (!authHeader || !authHeader.startsWith('Bearer ')) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+
+        const user = await User.findById(decoded.id);
+        if (!user || user.role !== 'ADMIN') {
+            return res.status(403).json({ message: 'Forbidden: Admin access required' });
+        }
+
+        req.user = user;
+        next();
+    } catch (err) {
+        console.error('Auth error:', err);
+        return res.status(401).json({ message: 'Unauthorized' });
+    }
+};
+
+// GET all registered users
+router.get('/users', authenticateAdmin, async (req, res) => {
+    try {
+        const users = await User.find({ role: { $ne: 'ADMIN' } }).select('-password').sort({ createdAt: -1 });
+        res.json({ users });
+    } catch (err) {
+        console.error('Error fetching users:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// GET teams for a specific user
+router.get('/users/:userId/teams', authenticateAdmin, async (req, res) => {
+    try {
+        const { Team } = require('../models/schema');
+        const { userId } = req.params;
+
+        // Find teams and populate necessary details if refs were set up perfectly.
+        // For our simplified schema, we'll fetch teams and maybe attach basic match info.
+        const teams = await Team.find({ userId }).sort({ _id: -1 });
+
+        res.json({ teams });
+    } catch (err) {
+        console.error('Error fetching user teams:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// GET a specific team by ID
+router.get('/teams/:teamId', authenticateAdmin, async (req, res) => {
+    try {
+        const { Team } = require('../models/schema');
+        const team = await Team.findById(req.params.teamId);
+        if (!team) return res.status(404).json({ message: 'Team not found' });
+
+        res.json({ team });
+    } catch (err) {
+        console.error('Error fetching team details:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// GET all teams for a specific match (with user info)
+router.get('/matches/:matchId/teams', authenticateAdmin, async (req, res) => {
+    try {
+        const { Team } = require('../models/schema');
+        const { matchId } = req.params;
+
+        // Find all teams for this match and populate user details (name, email)
+        const teams = await Team.find({ matchId })
+            .populate('userId', 'name email phone')
+            .sort({ _id: -1 });
+
+        res.json({ teams });
+    } catch (err) {
+        console.error('Error fetching match teams:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+module.exports = router;

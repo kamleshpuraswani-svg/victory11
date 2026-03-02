@@ -3,8 +3,9 @@ import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity }
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
+import { getAuthToken } from '../utils/storage';
 
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.0.183:5001/api';
+import { API_URL } from '../constants/Config';
 
 export default function MyTeams() {
     const { matchId } = useLocalSearchParams();
@@ -21,9 +22,12 @@ export default function MyTeams() {
     const fetchData = async () => {
         try {
             setLoading(true);
+            const token = await getAuthToken();
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
             // Fetch teams and players in parallel
             const [teamsRes, playersRes] = await Promise.all([
-                axios.get(`${API_URL}/teams/${matchId}`),
+                axios.get(`${API_URL}/teams/${matchId}`, { headers }),
                 axios.get(`${API_URL}/players/${matchId}`)
             ]);
 

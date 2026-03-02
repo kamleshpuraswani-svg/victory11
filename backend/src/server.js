@@ -45,17 +45,50 @@ const errorHandler = (err, req, res, next) => {
 };
 
 
+// Admin Seeding Logic
+const seedAdmin = async () => {
+    try {
+        const { User } = require('./models/schema');
+        const bcrypt = require('bcryptjs');
+        const adminEmail = 'admin@micl.com';
+
+        const existingAdmin = await User.findOne({ email: adminEmail });
+        if (!existingAdmin) {
+            const salt = await bcrypt.genSalt(10);
+            const hashedPassword = await bcrypt.hash('MICLAdmin2026!', salt);
+
+            const admin = new User({
+                name: 'System Admin',
+                email: adminEmail,
+                password: hashedPassword,
+                role: 'ADMIN'
+            });
+            await admin.save();
+            console.log('✅ Admin account seeded: admin@micl.com');
+        } else {
+            console.log('ℹ️ Admin account already exists');
+        }
+    } catch (err) {
+        console.error('❌ Error seeding admin:', err);
+    }
+};
+
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/fantasy_cricket';
 mongoose.connect(MONGODB_URI)
-    .then(() => console.log('Successfully connected to MongoDB'))
+    .then(() => {
+        console.log('Successfully connected to MongoDB');
+        seedAdmin();
+    })
     .catch(err => console.error('MongoDB connection error:', err));
 
 const apiRoutes = require('./routes/api');
 const authRoutes = require('./routes/auth');
+const adminRoutes = require('./routes/admin');
 
 // Mount Auth routes FIRST to prevent shadowing by Generic API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/admin', adminRoutes);
 app.use('/api', apiRoutes);
 
 // Error handler must be last

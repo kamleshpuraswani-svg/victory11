@@ -9,10 +9,16 @@ router.post('/register', async (req, res) => {
     try {
         const { name, email, phone, password } = req.body;
 
-        // Check if user already exists
-        let user = await User.findOne({ $or: [{ email }, { phone }] });
-        if (user) {
-            return res.status(400).json({ message: 'User already exists with this email or phone' });
+        // Check if user already exists by email
+        const existingEmail = await User.findOne({ email });
+        if (existingEmail) {
+            return res.status(400).json({ message: 'Email address already registered' });
+        }
+
+        // Check if user already exists by phone
+        const existingPhone = await User.findOne({ phone });
+        if (existingPhone) {
+            return res.status(400).json({ message: 'Mobile number already registered' });
         }
 
         // Hash password
@@ -32,7 +38,7 @@ router.post('/register', async (req, res) => {
         // Create JWT
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
 
-        res.status(201).json({ token, user: { id: user._id, name, email, phone } });
+        res.status(201).json({ token, user: { id: user._id, name, email, phone, role: user.role } });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error' });
@@ -42,10 +48,20 @@ router.post('/register', async (req, res) => {
 // Login User
 router.post('/login', async (req, res) => {
     try {
-        const { email, phone, password } = req.body;
+        const { identifier, password } = req.body;
 
-        // Find user by email or phone
-        const user = await User.findOne({ $or: [{ email }, { phone }] });
+        if (!identifier || !password) {
+            return res.status(400).json({ message: 'Please provide identifier and password' });
+        }
+
+        // Find user by email or phone using the single identifier
+        const user = await User.findOne({
+            $or: [
+                { email: identifier },
+                { phone: identifier }
+            ]
+        });
+
         if (!user) {
             return res.status(400).json({ message: 'Invalid credentials' });
         }
@@ -57,11 +73,57 @@ router.post('/login', async (req, res) => {
         }
 
         // Create JWT
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'secret', { expiresIn: '7d' });
+        const token = jwt.sign(
+            { id: user._id, role: user.role },
+            process.env.JWT_SECRET || 'secret',
+            { expiresIn: '7d' }
+        );
 
-        res.json({ token, user: { id: user._id, name: user.name, email: user.email, phone: user.phone } });
+        res.json({
+            token,
+            user: {
+                id: user._id,
+                name: user.name,
+                email: user.email,
+                phone: user.phone,
+                role: user.role
+            }
+        });
     } catch (err) {
-        console.error(err);
+        console.error("Backend login error:", err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
+// Reset Password
+router.post('/reset-password', async (req, res) => {
+    try {
+        const { identifier, newPassword } = req.body;
+
+        if (!identifier || !newPassword) {
+            return res.status(400).json({ message: 'Please provide identifier and new password' });
+        }
+
+        // Find user by email or phone
+        const user = await User.findOne({
+            $or: [
+                { email: identifier },
+                { phone: identifier }
+            ]
+        });
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        // Hash new password
+        const salt = await bcrypt.genSalt(10);
+        user.password = await bcrypt.hash(newPassword, salt);
+        await user.save();
+
+        res.json({ message: 'Password reset successful. Please sign in.' });
+    } catch (err) {
+        console.error("Reset password error:", err);
         res.status(500).json({ message: 'Server error' });
     }
 });

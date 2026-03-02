@@ -1,6 +1,22 @@
 const express = require('express');
 const router = express.Router();
+const jwt = require('jsonwebtoken');
 const { Team } = require('../models/schema');
+
+// Helper to extract userId from token
+const getUserIdFromToken = (req) => {
+    try {
+        const authHeader = req.headers.authorization;
+        if (authHeader && authHeader.startsWith('Bearer ')) {
+            const token = authHeader.split(' ')[1];
+            const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret');
+            return decoded.id;
+        }
+    } catch (err) {
+        console.error("Token verification failed in api.js:", err.message);
+    }
+    return null;
+};
 
 // 1. Matches and Teams Logic below
 
@@ -52,9 +68,12 @@ router.post('/teams/create', async (req, res) => {
             });
         }
 
+        // Extract userId from token if available
+        const userId = getUserIdFromToken(req);
+
         // Create new team in DB
-        // TODO: In a real app, extract userId from auth token. For now, we'll leave it optional or use a dummy.
         const newTeam = new Team({
+            userId,
             matchId,
             players: playerIds,
             captainId,
@@ -98,11 +117,33 @@ router.put('/teams/:teamId', async (req, res) => {
 // 5. Fetch Saved Teams for a Match
 router.get('/teams/:matchId', async (req, res) => {
     try {
-        const teams = await Team.find({ matchId: req.params.matchId });
+        const userId = getUserIdFromToken(req);
+        let query = { matchId: req.params.matchId };
+
+        // If a user is logged in, only return their teams. Otherwise return all (or handle differently)
+        if (userId) query.userId = userId;
+
+        const teams = await Team.find(query);
         res.json({ teams });
     } catch (err) {
         console.error("Fetch teams error:", err);
         res.status(500).json({ message: 'Error fetching teams' });
+    }
+});
+
+// 5.1 Fetch details for a specific team
+router.get('/teams/details/:teamId', async (req, res) => {
+    try {
+        const userId = getUserIdFromToken(req);
+        if (!userId) return res.status(401).json({ message: 'Unauthorized' });
+
+        const team = await Team.findOne({ _id: req.params.teamId, userId });
+        if (!team) return res.status(404).json({ message: 'Team not found' });
+
+        res.json({ team });
+    } catch (err) {
+        console.error("Fetch team details error:", err);
+        res.status(500).json({ message: 'Error fetching team details' });
     }
 });
 

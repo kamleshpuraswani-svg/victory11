@@ -2,7 +2,7 @@
     {
         "id": "match_1",
         "title": "Collab Kings vs Collab Titans",
-        "league": "Collab Series",
+        "league": "League Match 1",
         "date": "Fri, 13 Mar",
         "time": "8 PM - 10 PM",
         "teams": [
@@ -14,7 +14,7 @@
     {
         "id": "match_2",
         "title": "300 Dakaits vs MI Warriors",
-        "league": "Collab Series",
+        "league": "League Match 2",
         "date": "Fri, 13 Mar",
         "time": "10 PM - 12 AM",
         "teams": [
@@ -26,7 +26,7 @@
     {
         "id": "match_3",
         "title": "Collab Kings vs 300.EXE",
-        "league": "Collab Series",
+        "league": "League Match 3",
         "date": "Sun, 15 Mar",
         "time": "5 PM - 7 PM",
         "teams": [
@@ -38,7 +38,7 @@
     {
         "id": "match_4",
         "title": "MI Smashers vs 300 Dakaits",
-        "league": "Collab Series",
+        "league": "League Match 4",
         "date": "Sun, 15 Mar",
         "time": "7 PM - 9 PM",
         "teams": [
@@ -50,7 +50,7 @@
     {
         "id": "match_5",
         "title": "MI Smashers vs 300.EXE",
-        "league": "Collab Series",
+        "league": "League Match 5",
         "date": "Fri, 20 Mar",
         "time": "7 PM - 8:30 PM",
         "teams": [
@@ -62,7 +62,7 @@
     {
         "id": "match_6",
         "title": "MI Warriors vs Collab Kings",
-        "league": "Collab Series",
+        "league": "League Match 6",
         "date": "Fri, 20 Mar",
         "time": "8:45 PM - 10:15 PM",
         "teams": [
@@ -74,7 +74,7 @@
     {
         "id": "match_7",
         "title": "300 Dakaits vs Collab Titans",
-        "league": "Collab Series",
+        "league": "League Match 7",
         "date": "Fri, 20 Mar",
         "time": "10:30 PM - 12 AM",
         "teams": [
@@ -86,7 +86,7 @@
     {
         "id": "match_8",
         "title": "300.EXE vs MI Warriors",
-        "league": "Collab Series",
+        "league": "League Match 8",
         "date": "Sat, 21 Mar",
         "time": "5 PM - 7 PM",
         "teams": [
@@ -98,7 +98,7 @@
     {
         "id": "match_9",
         "title": "MI Smashers vs Collab Titans",
-        "league": "Collab Series",
+        "league": "League Match 9",
         "date": "Sat, 21 Mar",
         "time": "7 PM - 9 PM",
         "teams": [

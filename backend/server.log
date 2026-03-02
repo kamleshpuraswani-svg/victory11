@@ -1,0 +1,46 @@
+[dotenv@17.3.1] injecting env (6) from .env -- tip: 🔐 prevent building .env in docker: https://dotenvx.com/prebuild
+Backend server running on port 5001
+Successfully connected to MongoDB
+ℹ️ Admin account already exists
+[2026-03-02T13:29:44.258Z] POST Request to /api/auth/login
+Body: {
+  "identifier": "9016600680",
+  "password": "kamlesh"
+}
+2026-03-02T13:29:44.372Z - POST /api/auth/login - 200 (114ms)
+2026-03-02T13:29:44.433Z - GET /api/matches/upcoming - 304 (4ms)
+2026-03-02T13:29:47.716Z - GET /api/players/match_1 - 304 (1ms)
+2026-03-02T13:29:47.720Z - GET /api/teams/match_1 - 304 (17ms)
+2026-03-02T13:29:49.905Z - GET /api/contests/match_1 - 304 (1ms)
+2026-03-02T13:29:49.934Z - GET /api/teams/match_1 - 304 (8ms)
+2026-03-02T13:29:51.783Z - GET /api/teams/details/69a58a628ccfd24efbb38f52 - 200 (19ms)
+2026-03-02T13:29:51.818Z - GET /api/players/match_1 - 304 (1ms)
+2026-03-02T13:29:56.022Z - GET /api/players/match_1 - 304 (1ms)
+2026-03-02T13:29:59.955Z - GET /api/players/match_1 - 304 (0ms)
+2026-03-02T13:30:13.312Z - GET /api/players/match_2 - 304 (0ms)
+2026-03-02T13:30:13.317Z - GET /api/teams/match_2 - 304 (4ms)
+2026-03-02T13:30:16.947Z - GET /api/contests/match_2 - 304 (1ms)
+2026-03-02T13:30:16.969Z - GET /api/teams/match_2 - 304 (2ms)
+2026-03-02T13:30:18.253Z - GET /api/players/match_2 - 304 (1ms)
+2026-03-02T13:31:49.467Z - GET /api/matches/upcoming - 304 (1ms)
+2026-03-02T13:32:03.666Z - GET /api/matches/upcoming - 304 (1ms)
+[2026-03-02T13:32:53.905Z] POST Request to /api/auth/login
+Body: {
+  "identifier": "9016600680",
+  "password": "kamlesh"
+}
+2026-03-02T13:32:54.008Z - POST /api/auth/login - 200 (103ms)
+2026-03-02T13:32:54.065Z - GET /api/matches/upcoming - 304 (1ms)
+[2026-03-02T13:37:02.784Z] POST Request to /api/auth/login
+Body: {
+  "identifier": "901600680",
+  "password": "kamlesh"
+}
+2026-03-02T13:37:02.788Z - POST /api/auth/login - 400 (4ms)
+[2026-03-02T13:37:10.604Z] POST Request to /api/auth/login
+Body: {
+  "identifier": "9016600680",
+  "password": "kamlesh"
+}
+2026-03-02T13:37:10.705Z - POST /api/auth/login - 200 (101ms)
+2026-03-02T13:37:10.762Z - GET /api/matches/upcoming - 304 (1ms)

@@ -10,9 +10,10 @@ interface Player {
 }
 
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
+import { getAuthToken } from '../utils/storage';
 import axios from 'axios';
-
-const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://192.168.0.183:5001/api';
+import { API_URL } from '../constants/Config';
 
 const TEAM_PLAYERS: Record<string, any[]> = {
     "MI Warriors": [
@@ -211,6 +212,9 @@ export default function TeamSelection() {
 
             const method = teamId ? 'put' : 'post';
 
+            const token = await getAuthToken();
+            const headers = token ? { Authorization: `Bearer ${token}` } : {};
+
             console.log("Team Selection Final Submit:", {
                 method,
                 url,
@@ -224,6 +228,7 @@ export default function TeamSelection() {
             const response = await axios({
                 method,
                 url,
+                headers,
                 data: {
                     matchId,
                     playerIds: selectedPlayers,

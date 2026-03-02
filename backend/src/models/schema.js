@@ -8,6 +8,7 @@ const userSchema = new Schema({
   password: { type: String, required: true },
   walletBalance: { type: Number, default: 0 },
   kycStatus: { type: String, enum: ['PENDING', 'VERIFIED', 'REJECTED'], default: 'PENDING' },
+  role: { type: String, enum: ['USER', 'ADMIN'], default: 'USER' },
   createdAt: { type: Date, default: Date.now }
 });
 

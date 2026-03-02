@@ -1,36 +1,42 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, ScrollView, Platform } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import axios from 'axios';
 import { saveAuthData } from '../utils/storage';
+import { API_URL as BASE_URL } from '../constants/Config';
 
-const API_URL = 'http://192.168.0.183:5001/api/auth'; // Using local IP for mobile access
+const API_URL = BASE_URL + '/auth';
 
 export default function LoginScreen() {
-    const [email, setEmail] = useState('');
+    const [identifier, setIdentifier] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
+    const [statusMessage, setStatusMessage] = useState('');
     const router = useRouter();
 
     const handleLogin = async () => {
-        if (!email || !password) {
-            Alert.alert('Error', 'Please fill in all fields');
+        if (!identifier || !password) {
+            setStatusMessage('Please enter your details');
             return;
         }
 
+        setStatusMessage('Signing you in...');
         setLoading(true);
         try {
-            const response = await axios.post(`${API_URL}/login`, { email, password });
+            const response = await axios.post(`${API_URL}/login`, { identifier, password }, { timeout: 10000 });
             const { token, user } = response.data;
-
-            // Store token safely (handles Web/Native)
             await saveAuthData(token, user);
 
-            Alert.alert('Success', `Welcome back, ${user.name}!`);
-            router.replace('/');
+            setStatusMessage('Success! Redirecting...');
+            if (user?.role === 'ADMIN') {
+                router.replace('/admin/users');
+            } else {
+                router.replace('/(tabs)');
+            }
+
         } catch (error: any) {
-            const message = error.response?.data?.message || 'Login failed';
-            Alert.alert('Error', message);
+            const errorMsg = error.response?.data?.message || error.message;
+            setStatusMessage(errorMsg);
         } finally {
             setLoading(false);
         }
@@ -38,69 +44,106 @@ export default function LoginScreen() {
 
     return (
         <View style={styles.container}>
-            <Stack.Screen options={{ title: 'Login', headerLeft: () => null }} />
-            <Text style={styles.title}>Welcome to Fantasy Cricket</Text>
-            <Text style={styles.subtitle}>Sign in to your account</Text>
+            <Stack.Screen options={{ title: 'Sign In' }} />
 
-            <View style={styles.inputContainer}>
+            <View style={styles.card}>
+                <Text style={styles.title}>Welcome Back!</Text>
+                <Text style={styles.subtitle}>Enter your details to play & win</Text>
+
+                <Text style={styles.label}>Email or Mobile Number</Text>
                 <TextInput
+                    placeholder="Email or Mobile Number"
                     style={styles.input}
-                    placeholder="Email or Phone"
-                    value={email}
-                    onChangeText={setEmail}
+                    value={identifier}
+                    onChangeText={setIdentifier}
                     autoCapitalize="none"
                 />
+                <Text style={styles.label}>Password</Text>
                 <TextInput
-                    style={styles.input}
                     placeholder="Password"
+                    style={styles.input}
                     value={password}
                     onChangeText={setPassword}
                     secureTextEntry
                 />
+
+                {statusMessage ? (
+                    <Text style={[
+                        styles.statusMessage,
+                        statusMessage.includes('Success') || statusMessage.includes('Redirecting') ? styles.successText : styles.errorText
+                    ]}>
+                        {statusMessage}
+                    </Text>
+                ) : null}
+
+                <TouchableOpacity onPress={() => router.push('/forgot-password')} style={styles.forgotPasswordLinkCenter}>
+                    <Text style={styles.forgotPasswordLinkTextPrimary}>Forgot Password?</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                    style={[styles.loginBtn, loading && { opacity: 0.7 }]}
+                    onPress={handleLogin}
+                    disabled={loading}
+                >
+                    {loading ? (
+                        <ActivityIndicator color="#fff" />
+                    ) : (
+                        <Text style={styles.loginBtnText}>SIGN IN</Text>
+                    )}
+                </TouchableOpacity>
+
+                <View style={styles.footerRow}>
+                    <Text style={styles.footerText}>New user? </Text>
+                    <TouchableOpacity onPress={() => router.push('/register')}>
+                        <Text style={styles.linkText}>Register Now</Text>
+                    </TouchableOpacity>
+                </View>
             </View>
-
-            <TouchableOpacity
-                style={[styles.button, loading && styles.buttonDisabled]}
-                onPress={handleLogin}
-                disabled={loading}
-            >
-                {loading ? (
-                    <ActivityIndicator color="#fff" />
-                ) : (
-                    <Text style={styles.buttonText}>LOGIN</Text>
-                )}
-            </TouchableOpacity>
-
-            <TouchableOpacity onPress={() => router.push('/register')}>
-                <Text style={styles.linkText}>Don't have an account? <Text style={styles.linkHighlight}>Register</Text></Text>
-            </TouchableOpacity>
         </View>
     );
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, padding: 20, justifyContent: 'center', backgroundColor: '#fff' },
-    title: { fontSize: 28, fontWeight: 'bold', textAlign: 'center', color: '#333' },
-    subtitle: { fontSize: 16, textAlign: 'center', color: '#666', marginBottom: 30, marginTop: 5 },
-    inputContainer: { marginBottom: 20 },
+    container: { flex: 1, backgroundColor: '#1e293b', justifyContent: 'center', padding: 25 },
+    card: {
+        backgroundColor: '#fff',
+        padding: 30,
+        borderRadius: 20,
+        shadowColor: '#000',
+        shadowOpacity: 0.2,
+        shadowRadius: 10,
+        elevation: 10
+    },
+    title: { fontSize: 24, fontWeight: '800', color: '#1e293b', textAlign: 'center' },
+    subtitle: { fontSize: 14, color: '#64748b', textAlign: 'center', marginBottom: 30, marginTop: 5 },
+    label: { fontSize: 14, fontWeight: '700', color: '#1e293b', marginBottom: 8, marginLeft: 5 },
     input: {
-        backgroundColor: '#f9f9f9',
-        padding: 15,
-        borderRadius: 10,
-        marginBottom: 15,
         borderWidth: 1,
-        borderColor: '#eee'
+        borderColor: '#e2e8f0',
+        padding: 15,
+        borderRadius: 12,
+        marginBottom: 18,
+        fontSize: 16
     },
-    button: {
-        backgroundColor: '#4caf50',
+    loginBtn: {
+        backgroundColor: '#fbbf24',
         padding: 18,
-        borderRadius: 10,
+        borderRadius: 12,
         alignItems: 'center',
-        marginBottom: 20,
-        elevation: 2
     },
-    buttonDisabled: { backgroundColor: '#a5d6a7' },
-    buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
-    linkText: { textAlign: 'center', color: '#666' },
-    linkHighlight: { color: '#4caf50', fontWeight: 'bold' }
+    loginBtnText: { color: '#1e293b', fontWeight: '900', fontSize: 16 },
+    forgotPasswordLinkCenter: { alignSelf: 'center', marginBottom: 20 },
+    forgotPasswordLinkTextPrimary: { color: '#ef4444', fontWeight: '800', textDecorationLine: 'underline', fontSize: 14 },
+    statusMessage: {
+        textAlign: 'center',
+        marginBottom: 15,
+        fontSize: 14,
+        fontWeight: '700',
+        padding: 5
+    },
+    errorText: { color: '#ef4444' },
+    successText: { color: '#10b981' },
+    footerRow: { flexDirection: 'row', justifyContent: 'center', marginTop: 25 },
+    footerText: { color: '#64748b', fontSize: 14 },
+    linkText: { color: '#1e293b', fontSize: 14, fontWeight: '800', textDecorationLine: 'underline' }
 });

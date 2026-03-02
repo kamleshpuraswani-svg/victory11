@@ -1,36 +1,31 @@
-# 🚀 Victory11 Deployment Guide
+# 🚀 Victory11 Deployment Guide (Monorepo)
 
-Follow these steps to take your app from your computer to the world!
+Both your Backend and Frontend are in this single GitHub repository. Follow these steps:
 
 ## 1. Backend Deployment (Railway)
-Railway will host your database (MongoDB) and your Node.js server.
-
-1.  **Create a Railway account**: Go to [railway.app](https://railway.app).
-2.  **Upload to GitHub**: Create a new GitHub repository and upload the `backend` folder contents there.
-3.  **New Project**: In Railway, click **New Project** -> **Deploy from GitHub repo**.
-4.  **Add MongoDB**: Click **Add Service** -> **Database** -> **MongoDB**.
-5.  **Set Environment Variables**: In your Backend service settings, add these variables:
-    - `MONGODB_URI`: (Railway will auto-provide this if you add the MongoDB service).
-    - `PORT`: `5001` (or leave empty, Railway provides one).
-    - `JWT_SECRET`: `your_random_secret_here`
-6.  **Get your URL**: Once deployed, Railway will give you a URL like `https://victory11-production.up.railway.app`. **Copy this!**
+1.  **Create a Railway account**: [railway.app](https://railway.app).
+2.  **New Project**: Click **New Project** -> **Deploy from GitHub repo**.
+3.  **Root Directory**: In the deployment settings, set the **Root Directory** to `backend`.
+4.  **Add MongoDB**: Click **Add Service** -> **Database** -> **MongoDB`.
+5.  **Environment Variables**: In your Backend service (under `backend` folder), add:
+    - `MONGODB_URI`: (Auto-provided if you add MongoDB service).
+    - `PORT`: `5001`
+    - `JWT_SECRET`: `something_random_and_secure`
+6.  **Public URL**: Once it's running, click **Generate Domain** in Railway. **Copy this URL**.
 
 ---
 
 ## 2. Frontend Deployment (Vercel)
-Vercel will host your website/app so anyone can access it via a URL.
-
-1.  **Create a Vercel account**: Go to [vercel.com](https://vercel.com).
-2.  **Upload to GitHub**: Upload your `frontend` folder contents to a GitHub repository.
-3.  **Import Project**: In Vercel, click **Add New** -> **Project** and select your frontend repo.
+1.  **Create a Vercel account**: [vercel.com](https://vercel.com).
+2.  **Import Project**: Select the same GitHub repo.
+3.  **Root Directory**: Click "Edit" next to the root directory and select **`frontend`**.
 4.  **Configure Build Settings**:
-    - **Framework Preset**: Other
     - **Build Command**: `npx expo export -p web`
     - **Output Directory**: `dist`
-5.  **Set Environment Variables**: This is the most important part! Add this variable:
-    - `EXPO_PUBLIC_API_URL`: Paste your **Railway URL** here (the one you copied in step 1), ending with `/api`. 
-      - *Example*: `https://victory11-production.up.railway.app/api`
-6.  **Deploy**: Click Deploy! You'll get a URL like `victory11.vercel.app`.
+5.  **Environment Variables**: Add this ONE variable:
+    - `EXPO_PUBLIC_API_URL`: Paste your **Railway URL** here (from step 1), ending with `/api`.
+      - *Important*: Ensure it starts with `https://` and ends with `/api`.
+6.  **Deploy**: Click Deploy! You are now LIVE.
 
 ---
 
