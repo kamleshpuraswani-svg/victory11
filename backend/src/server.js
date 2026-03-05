@@ -18,6 +18,21 @@ app.get('/ping', (req, res) => {
     });
 });
 
+// DB Status Route
+app.get('/api/db-status', (req, res) => {
+    const status = mongoose.connection.readyState;
+    const states = {
+        0: 'disconnected',
+        1: 'connected',
+        2: 'connecting',
+        3: 'disconnecting'
+    };
+    res.json({
+        status: states[status] || 'unknown',
+        readyState: status
+    });
+});
+
 
 // Request Logger
 app.use((req, res, next) => {
