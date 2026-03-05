@@ -36,7 +36,15 @@ const matchSchema = new Schema({
     target: { type: Number },
     battingTeam: { type: String },
     lastEvent: { type: String } // e.g., "4 runs by Sanskar"
-  }
+  },
+  playerStats: [{
+    playerId: String,
+    runs: { type: Number, default: 0 },
+    wickets: { type: Number, default: 0 },
+    catches: { type: Number, default: 0 },
+    stumpings: { type: Number, default: 0 },
+    fantasyPoints: { type: Number, default: 0 }
+  }]
 });
 
 const teamSchema = new Schema({

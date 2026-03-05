@@ -12,6 +12,7 @@ export default function UserTeamDetails() {
 
     const [team, setTeam] = useState<any>(null);
     const [players, setPlayers] = useState<any[]>([]);
+    const [matchStats, setMatchStats] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState('');
 
@@ -57,6 +58,17 @@ export default function UserTeamDetails() {
             if (fetchedTeam?.matchId) {
                 const playersRes = await axios.get(`${API_URL}/players/${fetchedTeam.matchId}`);
                 setPlayers(playersRes.data.players || []);
+
+                // 3. Fetch match details to get playerStats if available
+                try {
+                    const matchRes = await axios.get(`${API_URL}/matches/upcoming`); // Using existing generic list for simplicity
+                    const match = matchRes.data.matches.find((m: any) => m.id === fetchedTeam.matchId);
+                    if (match && match.playerStats) {
+                        setMatchStats(match.playerStats);
+                    }
+                } catch (e) {
+                    console.error("Could not fetch match stats", e);
+                }
             }
 
         } catch (err: any) {
@@ -76,12 +88,24 @@ export default function UserTeamDetails() {
         const isCaptain = team?.captainId === item;
         const isViceCaptain = team?.viceCaptainId === item;
 
+        // Find if this player has points
+        const stat = matchStats.find(s => s.playerId === item);
+        let pts = stat ? stat.fantasyPoints : 0;
+
+        if (isCaptain) pts *= 2;
+        else if (isViceCaptain) pts *= 1.5;
+
         return (
             <View style={styles.playerCard}>
                 <View style={styles.playerInfo}>
                     <Text style={styles.playerName}>{playerInfo.name}</Text>
                     <Text style={styles.playerRole}>{playerInfo.role} • {playerInfo.team}</Text>
                 </View>
+                {stat && (
+                    <View style={styles.pointsPill}>
+                        <Text style={styles.pointsPillText}>{pts} pts</Text>
+                    </View>
+                )}
                 <View style={styles.badgeRow}>
                     {isCaptain && (
                         <View style={styles.capBadge}>
@@ -273,6 +297,20 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#64748b',
         marginTop: 2
+    },
+    pointsPill: {
+        backgroundColor: '#f0fdf4',
+        paddingHorizontal: 8,
+        paddingVertical: 4,
+        borderRadius: 12,
+        marginRight: 8,
+        borderWidth: 1,
+        borderColor: '#bbf7d0'
+    },
+    pointsPillText: {
+        color: '#16a34a',
+        fontSize: 11,
+        fontWeight: '800'
     },
     badgeRow: {
         flexDirection: 'row'

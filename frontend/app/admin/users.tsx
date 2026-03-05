@@ -212,16 +212,30 @@ export default function AdminUsersScreen() {
                 </TouchableOpacity>
             </View>
 
-            {item.status === 'LIVE' && (
-                <TouchableOpacity
-                    style={styles.liveScoreBtn}
-                    onPress={() => router.push({
-                        pathname: '/admin/match-score',
-                        params: { matchId: item.id, teamA: item.teams[0], teamB: item.teams[1] }
-                    })}
-                >
-                    <Text style={styles.liveScoreBtnText}>⚡ UPDATE LIVE SCORE</Text>
-                </TouchableOpacity>
+            {(item.status === 'LIVE' || item.status === 'COMPLETED') && (
+                <View style={styles.actionRowStyles}>
+                    {item.status === 'LIVE' && (
+                        <TouchableOpacity
+                            style={[styles.liveScoreBtn, { flex: 1, marginRight: 5 }]}
+                            onPress={() => router.push({
+                                pathname: '/admin/match-score',
+                                params: { matchId: item.id, teamA: item.teams[0], teamB: item.teams[1] }
+                            })}
+                        >
+                            <Text style={styles.liveScoreBtnText}>⚡ LIVE SCORE</Text>
+                        </TouchableOpacity>
+                    )}
+
+                    <TouchableOpacity
+                        style={[styles.scorecardBtn, { flex: 1, marginLeft: item.status === 'LIVE' ? 5 : 0 }]}
+                        onPress={() => router.push({
+                            pathname: '/admin/admin-scorecard',
+                            params: { matchId: item.id }
+                        })}
+                    >
+                        <Text style={styles.scorecardBtnText}>📝 PLAYER SCORECARD</Text>
+                    </TouchableOpacity>
+                </View>
             )}
         </TouchableOpacity>
     );
@@ -502,6 +516,24 @@ const styles = StyleSheet.create({
     },
     liveScoreBtnText: {
         color: '#fbbf24',
+        fontWeight: '900',
+        fontSize: 12
+    },
+    actionRowStyles: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        marginTop: 12
+    },
+    scorecardBtn: {
+        backgroundColor: '#f1f5f9',
+        paddingVertical: 10,
+        borderRadius: 6,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#0288d1'
+    },
+    scorecardBtnText: {
+        color: '#0288d1',
         fontWeight: '900',
         fontSize: 12
     }
