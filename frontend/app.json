@@ -23,7 +23,11 @@
     },
     "web": {
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/favicon.png",
+      "display": "standalone",
+      "orientation": "portrait",
+      "backgroundColor": "#1e293b",
+      "themeColor": "#1e293b"
     },
     "plugins": [
       "expo-router",
