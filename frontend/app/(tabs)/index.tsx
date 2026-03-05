@@ -5,104 +5,7 @@ import { getAuthToken, clearAuthData } from '../../utils/storage';
 import axios from 'axios';
 import { API_URL } from '../../constants/Config';
 
-const ALL_MATCHES = [
-  {
-    "id": "match_1",
-    "league": "League Match 1",
-    "date": "13/03/2026",
-    "time": "8 PM - 10 PM",
-    "venue": "Rapid 360 Cricket Ground",
-    "teams": ["Collab Kings", "Collab Titans"]
-  },
-  {
-    "id": "match_2",
-    "league": "League Match 2",
-    "date": "13/03/2026",
-    "time": "10 PM - 12 AM",
-    "venue": "Rapid 360 Cricket Ground",
-    "teams": ["300 Dakaits", "MI Warriors"]
-  },
-  {
-    "id": "match_3",
-    "league": "League Match 3",
-    "date": "15/03/2026",
-    "time": "5 PM - 7 PM",
-    "venue": "Rapid 360 Cricket Ground",
-    "teams": ["Collab Kings", "300.EXE"]
-  },
-  {
-    "id": "match_4",
-    "league": "League Match 4",
-    "date": "15/03/2026",
-    "time": "7 PM - 9 PM",
-    "venue": "Rapid 360 Cricket Ground",
-    "teams": ["MI Smashers", "300 Dakaits"]
-  },
-  {
-    "id": "match_5",
-    "league": "League Match 5",
-    "date": "20/03/2026",
-    "time": "7 PM - 8:30 PM",
-    "venue": "Rapid 360 Cricket Ground",
-    "teams": ["MI Smashers", "300.EXE"]
-  },
-  {
-    "id": "match_6",
-    "league": "League Match 6",
-    "date": "20/03/2026",
-    "time": "8:45 PM - 10:15 PM",
-    "venue": "Rapid 360 Cricket Ground",
-    "teams": ["MI Warriors", "Collab Kings"]
-  },
-  {
-    "id": "match_7",
-    "league": "League Match 7",
-    "date": "20/03/2026",
-    "time": "10:30 PM - 12 AM",
-    "venue": "Rapid 360 Cricket Ground",
-    "teams": ["300 Dakaits", "Collab Titans"]
-  },
-  {
-    "id": "match_8",
-    "league": "League Match 8",
-    "date": "21/03/2026",
-    "time": "5 PM - 7 PM",
-    "venue": "Rapid 360 Cricket Ground",
-    "teams": ["300.EXE", "MI Warriors"]
-  },
-  {
-    "id": "match_9",
-    "league": "League Match 9",
-    "date": "21/03/2026",
-    "time": "7 PM - 9 PM",
-    "venue": "Rapid 360 Cricket Ground",
-    "teams": ["MI Smashers", "Collab Titans"]
-  },
-  {
-    "id": "match_10",
-    "league": "Semifinals",
-    "date": "27/03/2026",
-    "time": "8 PM - 10 PM",
-    "venue": "Rapid 360 Cricket Ground",
-    "teams": ["Rank 1", "Rank 4"]
-  },
-  {
-    "id": "match_11",
-    "league": "Semifinals",
-    "date": "27/03/2026",
-    "time": "10 PM - 12 AM",
-    "venue": "Rapid 360 Cricket Ground",
-    "teams": ["Rank 2", "Rank 3"]
-  },
-  {
-    "id": "match_12",
-    "league": "Grand Finale",
-    "date": "28/03/2026",
-    "time": "8 PM - 11 PM",
-    "venue": "Rapid 360 Cricket Ground",
-    "teams": ["Winner SF1", "Winner SF2"]
-  }
-];
+const ALL_MATCHES: any[] = []; // Initialize empty, fetch from DB
 
 export default function MatchList() {
   const router = useRouter();
@@ -178,7 +81,19 @@ export default function MatchList() {
           >
             <View style={styles.cardHeader}>
               <Text style={styles.leagueName}>{item.league || 'Series'}</Text>
-              <Text style={styles.matchTime}>{item.time || 'TBD'}</Text>
+              <View style={[
+                styles.statusBadge,
+                item.status === 'LIVE' && styles.statusBadgeLive,
+                item.status === 'COMPLETED' && styles.statusBadgeCompleted
+              ]}>
+                <Text style={[
+                  styles.statusText,
+                  item.status === 'LIVE' && styles.statusTextLive,
+                  item.status === 'COMPLETED' && styles.statusTextCompleted
+                ]}>
+                  {item.status || 'UPCOMING'}
+                </Text>
+              </View>
             </View>
 
             <View style={styles.matchMain}>
@@ -266,8 +181,18 @@ const styles = StyleSheet.create({
     paddingBottom: 10,
     marginBottom: 10
   },
-  leagueName: { fontSize: 13, fontWeight: '600', color: '#777', textTransform: 'uppercase' },
-  matchTime: { fontSize: 12, color: '#4caf50', fontWeight: 'bold' },
+  leagueName: { fontSize: 13, fontWeight: '700', color: '#64748b', textTransform: 'uppercase', letterSpacing: 0.5 },
+  statusBadge: {
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 6,
+    backgroundColor: '#e1f5fe'
+  },
+  statusBadgeLive: { backgroundColor: '#fef3c7' },
+  statusBadgeCompleted: { backgroundColor: '#f0fdf4' },
+  statusText: { fontSize: 10, fontWeight: '900', color: '#0288d1' },
+  statusTextLive: { color: '#d97706' },
+  statusTextCompleted: { color: '#16a34a' },
   matchMain: {
     flexDirection: 'row',
     justifyContent: 'space-between',

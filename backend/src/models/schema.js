@@ -13,10 +13,15 @@ const userSchema = new Schema({
 });
 
 const matchSchema = new Schema({
-  apiMatchId: String,
+  customId: { type: String, unique: true }, // For 'match_1', 'match_2' reference
   title: String,
-  status: { type: String, enum: ['UPCOMING', 'LIVE', 'COMPLETED'] },
+  league: String,
+  date: String,
+  time: String,
+  venue: String,
+  status: { type: String, enum: ['UPCOMING', 'LIVE', 'COMPLETED'], default: 'UPCOMING' },
   startTime: Date,
+  teams: [String],
   players: [{
     playerId: String,
     name: String,

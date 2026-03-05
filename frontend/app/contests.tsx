@@ -12,6 +12,7 @@ export default function Contests() {
     const router = useRouter();
     const [contests, setContests] = useState<any[]>([]);
     const [userTeams, setUserTeams] = useState<any[]>([]);
+    const [matchStatus, setMatchStatus] = useState('UPCOMING');
     const [loading, setLoading] = useState(true);
     const [teamsLoading, setTeamsLoading] = useState(false);
 
@@ -23,6 +24,7 @@ export default function Contests() {
         try {
             const response = await axios.get(`${API_URL}/contests/${matchId}`);
             setContests(response.data.contests);
+            setMatchStatus(response.data.matchStatus || 'UPCOMING');
             await fetchUserTeams();
         } catch (err) {
             console.error("Fetch contests error:", err);
@@ -49,6 +51,13 @@ export default function Contests() {
     };
 
     const handleJoin = (contest: any) => {
+        if (matchStatus !== 'UPCOMING') {
+            Alert.alert(
+                matchStatus === 'COMPLETED' ? 'Match Ended' : 'Match Live',
+                `This match is ${matchStatus.toLowerCase()} and no longer accepting entries.`
+            );
+            return;
+        }
         // Navigate directly to team selection for this match
         router.push({
             pathname: '/team-selection',
@@ -58,19 +67,30 @@ export default function Contests() {
 
     const renderContest = ({ item }: { item: any }) => {
         const hasJoined = userTeams.length > 0;
+        const isLocked = matchStatus !== 'UPCOMING';
 
         return (
             <View>
-                <View style={styles.contestCard}>
+                <View style={[styles.contestCard, isLocked && styles.lockedCard]}>
                     <View style={styles.contestInfo}>
                         <Text style={styles.contestName}>{item.name}</Text>
-                        <Text style={styles.contestDesc}>Join the ultimate challenge and win big!</Text>
+                        <Text style={styles.contestDesc}>
+                            {matchStatus === 'COMPLETED' ? 'This match has ended.' :
+                                matchStatus === 'LIVE' ? 'Match is live. Entries are closed.' :
+                                    'Join the ultimate challenge and win big!'}
+                        </Text>
                     </View>
                     <TouchableOpacity
-                        style={[styles.entryBtn, hasJoined && styles.joinedBtn]}
+                        style={[
+                            styles.entryBtn,
+                            hasJoined && styles.joinedBtn,
+                            isLocked && styles.disabledBtn
+                        ]}
                         onPress={() => handleJoin(item)}
                     >
-                        <Text style={styles.entryBtnText}>{hasJoined ? 'Joined' : 'Join'}</Text>
+                        <Text style={styles.entryBtnText}>
+                            {matchStatus === 'COMPLETED' ? 'ENDED' : hasJoined ? 'JOINED' : 'JOIN'}
+                        </Text>
                     </TouchableOpacity>
                 </View>
 
@@ -96,13 +116,15 @@ export default function Contests() {
                             </TouchableOpacity>
                         ))}
 
-                        <TouchableOpacity
-                            style={styles.addMoreBtn}
-                            onPress={() => handleJoin(item)}
-                        >
-                            <Ionicons name="add-circle" size={20} color="#4caf50" />
-                            <Text style={styles.addMoreText}>Create Multiple Teams</Text>
-                        </TouchableOpacity>
+                        {!isLocked && (
+                            <TouchableOpacity
+                                style={styles.addMoreBtn}
+                                onPress={() => handleJoin(item)}
+                            >
+                                <Ionicons name="add-circle" size={20} color="#4caf50" />
+                                <Text style={styles.addMoreText}>Create Multiple Teams</Text>
+                            </TouchableOpacity>
+                        )}
                     </View>
                 )}
             </View>
@@ -174,6 +196,14 @@ const styles = StyleSheet.create({
     entryBtnText: { color: '#fff', fontWeight: 'bold' },
     joinedBtn: {
         backgroundColor: '#1e293b',
+    },
+    disabledBtn: {
+        backgroundColor: '#94a3b8',
+    },
+    lockedCard: {
+        opacity: 0.8,
+        borderColor: '#e2e8f0',
+        borderWidth: 1
     },
     userTeamsSection: {
         backgroundColor: '#fff',

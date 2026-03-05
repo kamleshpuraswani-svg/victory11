@@ -162,6 +162,12 @@ export default function TeamSelection() {
                     if (response.data && Array.isArray(response.data.players) && response.data.players.length > 0) {
                         setPlayers(response.data.players);
                     }
+
+                    // Also check match status for locking edits
+                    const contestsRes = await axios.get(`${API_URL}/contests/${matchId}`);
+                    if (contestsRes.data.matchStatus && contestsRes.data.matchStatus !== 'UPCOMING') {
+                        setErrorMsg(`Match is ${contestsRes.data.matchStatus.toLowerCase()}. Editing is disabled.`);
+                    }
                 }
             } catch (error) {
                 console.error("Error initializing team selection:", error);
@@ -206,6 +212,14 @@ export default function TeamSelection() {
         setErrorMsg(null);
 
         try {
+            // Re-verify status before submit
+            const statusRes = await axios.get(`${API_URL}/contests/${matchId}`);
+            if (statusRes.data.matchStatus && statusRes.data.matchStatus !== 'UPCOMING') {
+                Alert.alert("Match Locked", `Match is already ${statusRes.data.matchStatus.toLowerCase()}. You can no longer save teams.`);
+                setSubmitting(false);
+                return;
+            }
+
             const url = teamId
                 ? `${API_URL}/teams/${teamId}`
                 : `${API_URL}/teams/create`;

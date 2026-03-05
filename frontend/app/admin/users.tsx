@@ -96,6 +96,21 @@ export default function AdminUsersScreen() {
         }
     };
 
+    const updateMatchStatus = async (matchId: string, newStatus: string) => {
+        try {
+            const token = await getAuthToken();
+            await axios.patch(`${API_URL}/admin/matches/${matchId}/status`,
+                { status: newStatus },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
+            Alert.alert('Success', `Match is now ${newStatus}`);
+            fetchMatches(); // Refresh list
+        } catch (err) {
+            console.error("Update status error:", err);
+            Alert.alert('Error', 'Failed to update match status');
+        }
+    };
+
     const getMatchTitle = (matchId: string) => {
         const match = matches.find(m => m.id === matchId);
         return match ? match.title : matchId;
@@ -174,6 +189,27 @@ export default function AdminUsersScreen() {
             <View style={styles.matchDetailsRow}>
                 <Text style={styles.matchDetailText}>🏟️ {item.venue || 'N/A'}</Text>
                 <Text style={styles.matchDetailText}>🕒 {new Date(item.startTime).toLocaleDateString('en-GB') + ' ' + new Date(item.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
+            </View>
+
+            <View style={styles.adminActionRow}>
+                <TouchableOpacity
+                    style={[styles.statusBtn, item.status === 'UPCOMING' && styles.activeStatusBtnUpcoming]}
+                    onPress={() => updateMatchStatus(item.id, 'UPCOMING')}
+                >
+                    <Text style={styles.statusBtnText}>UPCOMING</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.statusBtn, item.status === 'LIVE' && styles.activeStatusBtnLive]}
+                    onPress={() => updateMatchStatus(item.id, 'LIVE')}
+                >
+                    <Text style={styles.statusBtnText}>LIVE</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                    style={[styles.statusBtn, item.status === 'COMPLETED' && styles.activeStatusBtnCompleted]}
+                    onPress={() => updateMatchStatus(item.id, 'COMPLETED')}
+                >
+                    <Text style={styles.statusBtnText}>COMPLETED</Text>
+                </TouchableOpacity>
             </View>
         </TouchableOpacity>
     );
@@ -416,5 +452,31 @@ const styles = StyleSheet.create({
         fontSize: 12,
         color: '#64748b',
         fontWeight: '500'
-    }
+    },
+    adminActionRow: {
+        flexDirection: 'row',
+        marginTop: 15,
+        paddingTop: 15,
+        borderTopWidth: 1,
+        borderTopColor: '#f1f5f9',
+        justifyContent: 'space-between',
+        gap: 8
+    },
+    statusBtn: {
+        flex: 1,
+        paddingVertical: 6,
+        borderRadius: 4,
+        backgroundColor: '#f1f5f9',
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#e2e8f0'
+    },
+    statusBtnText: {
+        fontSize: 9,
+        fontWeight: '800',
+        color: '#64748b'
+    },
+    activeStatusBtnUpcoming: { backgroundColor: '#e1f5fe', borderColor: '#0288d1' },
+    activeStatusBtnLive: { backgroundColor: '#fef3c7', borderColor: '#d97706' },
+    activeStatusBtnCompleted: { backgroundColor: '#f0fdf4', borderColor: '#16a34a' }
 });

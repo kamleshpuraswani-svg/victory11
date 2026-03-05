@@ -20,30 +20,42 @@ const getUserIdFromToken = (req) => {
 
 // 1. Matches and Teams Logic below
 
-const matchesData = require('../data/matches.json');
-const playersData = require('../data/players.json');
-const contestsData = require('../data/contests.json');
+const { Team, Match } = require('../models/schema');
 
-// 2. Fetch Upcoming Matches
+// 2. Fetch All Matches from DB
 router.get('/matches/upcoming', async (req, res) => {
-    res.json({ matches: matchesData });
+    try {
+        const matches = await Match.find().sort({ startTime: 1 });
+        // Map customId back to 'id' for frontend compatibility
+        const formattedMatches = matches.map(m => ({
+            ...m.toObject(),
+            id: m.customId
+        }));
+        res.json({ matches: formattedMatches });
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching matches' });
+    }
 });
 
 // 2.1 Fetch Players for a Match
 router.get('/players/:matchId', async (req, res) => {
-    const match = matchesData.find(m => m.id === req.params.matchId);
-    if (!match) return res.status(404).json({ message: 'Match not found' });
+    try {
+        const match = await Match.findOne({ customId: req.params.matchId });
+        if (!match) return res.status(404).json({ message: 'Match not found' });
 
-    const teamA = playersData[match.teams[0]] || [];
-    const teamB = playersData[match.teams[1]] || [];
+        const playersData = require('../data/players.json');
+        const teamA = playersData[match.teams[0]] || [];
+        const teamB = playersData[match.teams[1]] || [];
 
-    // Combine players and add team info
-    const allPlayers = [
-        ...teamA.map(p => ({ ...p, team: match.teams[0] })),
-        ...teamB.map(p => ({ ...p, team: match.teams[1] }))
-    ];
+        const allPlayers = [
+            ...teamA.map(p => ({ ...p, team: match.teams[0] })),
+            ...teamB.map(p => ({ ...p, team: match.teams[1] }))
+        ];
 
-    res.json({ players: allPlayers });
+        res.json({ players: allPlayers });
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching players' });
+    }
 });
 
 // 3. Team Creation with Validation
@@ -54,7 +66,16 @@ router.post('/teams/create', async (req, res) => {
         }
 
         const { matchId, playerIds, captainId, viceCaptainId } = req.body;
-        console.log("Team Creation Request Received:", { matchId, playerIds, captainId, viceCaptainId });
+
+        // CHECK MATCH STATUS
+        const match = await Match.findOne({ customId: matchId });
+        if (!match) return res.status(404).json({ message: 'Match not found' });
+
+        if (match.status !== 'UPCOMING') {
+            return res.status(403).json({
+                message: `Cannot create team. Match is ${match.status.toLowerCase()}`
+            });
+        }
 
         if (!matchId || !playerIds || playerIds.length !== 11 || !captainId || !viceCaptainId) {
             return res.status(400).json({
@@ -99,13 +120,22 @@ router.put('/teams/:teamId', async (req, res) => {
         const { playerIds, captainId, viceCaptainId } = req.body;
         console.log("Update Data:", { playerIds, captainId, viceCaptainId });
 
+        const teamToUpdate = await Team.findById(req.params.teamId);
+        if (!teamToUpdate) return res.status(404).json({ message: 'Team not found' });
+
+        // CHECK MATCH STATUS
+        const match = await Match.findOne({ customId: teamToUpdate.matchId });
+        if (match && match.status !== 'UPCOMING') {
+            return res.status(403).json({
+                message: `Cannot edit team. Match is ${match.status.toLowerCase()}`
+            });
+        }
+
         const updatedTeam = await Team.findByIdAndUpdate(
             req.params.teamId,
             { players: playerIds, captainId, viceCaptainId },
             { new: true }
         );
-
-        if (!updatedTeam) return res.status(404).json({ message: 'Team not found' });
 
         res.json({ message: 'Team updated successfully!', team: updatedTeam });
     } catch (err) {
@@ -149,8 +179,16 @@ router.get('/teams/details/:teamId', async (req, res) => {
 
 // 5. Fetch Contests for a Match
 router.get('/contests/:matchId', async (req, res) => {
-    // For now, return the same dummy contests for all matches
-    res.json({ contests: contestsData });
+    try {
+        const match = await Match.findOne({ customId: req.params.matchId });
+        const contestsData = require('../data/contests.json');
+        res.json({
+            contests: contestsData,
+            matchStatus: match ? match.status : 'UPCOMING'
+        });
+    } catch (err) {
+        res.status(500).json({ message: 'Error fetching contests' });
+    }
 });
 
 module.exports = router;

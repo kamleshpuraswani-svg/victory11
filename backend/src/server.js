@@ -101,17 +101,46 @@ const seedAdmin = async () => {
     }
 };
 
+const seedMatches = async () => {
+    try {
+        const matchesData = require('./data/matches.json');
+        const { Match } = require('./models/schema');
+
+        for (const m of matchesData) {
+            const existing = await Match.findOne({ customId: m.id });
+            if (!existing) {
+                const newMatch = new Match({
+                    customId: m.id,
+                    title: m.title,
+                    league: m.league,
+                    date: m.date,
+                    time: m.time,
+                    venue: m.venue,
+                    status: m.status,
+                    startTime: m.startTime,
+                    teams: m.teams
+                });
+                await newMatch.save();
+                console.log(`✅ Seeded match: ${m.title}`);
+            }
+        }
+    } catch (err) {
+        console.error('❌ Error seeding matches:', err);
+    }
+};
+
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/fantasy_cricket';
 console.log(`📡 Attempting to connect to: ${MONGODB_URI.replace(/:([^@]+)@/, ':****@')}`);
 
 mongoose.connect(MONGODB_URI, {
-    serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+    serverSelectionTimeoutMS: 5000,
     socketTimeoutMS: 45000,
 })
     .then(() => {
         console.log('✅ Successfully connected to MongoDB');
         seedAdmin();
+        seedMatches(); // Sync JSON to DB
     })
     .catch(err => {
         console.error('❌ MongoDB connection error details:', err);

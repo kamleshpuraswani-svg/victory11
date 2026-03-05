@@ -87,4 +87,29 @@ router.get('/matches/:matchId/teams', authenticateAdmin, async (req, res) => {
     }
 });
 
+// 5. Update match status (UPCOMING -> LIVE -> COMPLETED)
+router.patch('/matches/:matchId/status', authenticateAdmin, async (req, res) => {
+    try {
+        const { Match } = require('../models/schema');
+        const { status } = req.body;
+
+        if (!['UPCOMING', 'LIVE', 'COMPLETED'].includes(status)) {
+            return res.status(400).json({ message: 'Invalid status' });
+        }
+
+        const match = await Match.findOneAndUpdate(
+            { customId: req.params.matchId },
+            { status },
+            { new: true }
+        );
+
+        if (!match) return res.status(404).json({ message: 'Match not found' });
+
+        res.json({ message: `Match status updated to ${status}`, match });
+    } catch (err) {
+        console.error('Error updating match status:', err);
+        res.status(500).json({ message: 'Server error' });
+    }
+});
+
 module.exports = router;
