@@ -8,86 +8,98 @@ import { API_URL } from '../../constants/Config';
 const ALL_MATCHES = [
   {
     "id": "match_1",
-    "league": "COLLAB SERIES",
+    "league": "League Match 1",
     "date": "Fri, 13 Mar",
     "time": "8 PM - 10 PM",
+    "venue": "Rapid 360 Cricket Ground",
     "teams": ["Collab Kings", "Collab Titans"]
   },
   {
     "id": "match_2",
-    "league": "COLLAB SERIES",
+    "league": "League Match 2",
     "date": "Fri, 13 Mar",
     "time": "10 PM - 12 AM",
+    "venue": "Rapid 360 Cricket Ground",
     "teams": ["300 Dakaits", "MI Warriors"]
   },
   {
     "id": "match_3",
-    "league": "COLLAB SERIES",
+    "league": "League Match 3",
     "date": "Sun, 15 Mar",
     "time": "5 PM - 7 PM",
+    "venue": "Rapid 360 Cricket Ground",
     "teams": ["Collab Kings", "300.EXE"]
   },
   {
     "id": "match_4",
-    "league": "COLLAB SERIES",
+    "league": "League Match 4",
     "date": "Sun, 15 Mar",
     "time": "7 PM - 9 PM",
+    "venue": "Rapid 360 Cricket Ground",
     "teams": ["MI Smashers", "300 Dakaits"]
   },
   {
     "id": "match_5",
-    "league": "COLLAB SERIES",
+    "league": "League Match 5",
     "date": "Fri, 20 Mar",
     "time": "7 PM - 8:30 PM",
+    "venue": "Rapid 360 Cricket Ground",
     "teams": ["MI Smashers", "300.EXE"]
   },
   {
     "id": "match_6",
-    "league": "COLLAB SERIES",
+    "league": "League Match 6",
     "date": "Fri, 20 Mar",
     "time": "8:45 PM - 10:15 PM",
+    "venue": "Rapid 360 Cricket Ground",
     "teams": ["MI Warriors", "Collab Kings"]
   },
   {
     "id": "match_7",
-    "league": "COLLAB SERIES",
+    "league": "League Match 7",
     "date": "Fri, 20 Mar",
     "time": "10:30 PM - 12 AM",
+    "venue": "Rapid 360 Cricket Ground",
     "teams": ["300 Dakaits", "Collab Titans"]
   },
   {
     "id": "match_8",
-    "league": "COLLAB SERIES",
+    "league": "League Match 8",
     "date": "Sat, 21 Mar",
     "time": "5 PM - 7 PM",
+    "venue": "Rapid 360 Cricket Ground",
     "teams": ["300.EXE", "MI Warriors"]
   },
   {
     "id": "match_9",
-    "league": "COLLAB SERIES",
+    "league": "League Match 9",
     "date": "Sat, 21 Mar",
     "time": "7 PM - 9 PM",
+    "venue": "Rapid 360 Cricket Ground",
     "teams": ["MI Smashers", "Collab Titans"]
   },
   {
     "id": "match_10",
-    "league": "SEMIFINALS",
+    "league": "Semifinals",
     "date": "Fri, 27 Mar",
     "time": "8 PM - 10 PM",
+    "venue": "Rapid 360 Cricket Ground",
     "teams": ["Rank 1", "Rank 4"]
   },
   {
     "id": "match_11",
-    "league": "SEMIFINALS",
+    "league": "Semifinals",
     "date": "Fri, 27 Mar",
     "time": "10 PM - 12 AM",
+    "venue": "Rapid 360 Cricket Ground",
     "teams": ["Rank 2", "Rank 3"]
   },
   {
     "id": "match_12",
-    "league": "GRAND FINALE",
+    "league": "Grand Finale",
     "date": "Sat, 28 Mar",
     "time": "8 PM - 11 PM",
+    "venue": "Rapid 360 Cricket Ground",
     "teams": ["Winner SF1", "Winner SF2"]
   }
 ];
@@ -179,7 +191,10 @@ export default function MatchList() {
               </View>
             </View>
             <View style={styles.cardFooter}>
-              <Text style={styles.matchDate}>{item.date || 'Soon'}</Text>
+              <View>
+                <Text style={styles.matchDate}>{item.date || 'Soon'}</Text>
+                <Text style={styles.venueText}>🏟️ {item.venue || 'TBD'}</Text>
+              </View>
               <TouchableOpacity
                 style={styles.myTeamsBtn}
                 onPress={(e) => {
@@ -285,6 +300,7 @@ const styles = StyleSheet.create({
     alignItems: 'center'
   },
   matchDate: { fontSize: 13, color: '#555', fontWeight: '500' },
+  venueText: { fontSize: 11, color: '#64748b', marginTop: 2 },
   myTeamsBtn: {
     backgroundColor: '#fff',
     borderWidth: 1,

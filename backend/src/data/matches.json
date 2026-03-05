@@ -5,11 +5,13 @@
         "league": "League Match 1",
         "date": "Fri, 13 Mar",
         "time": "8 PM - 10 PM",
+        "startTime": "2026-03-13T20:00:00Z",
+        "venue": "Rapid 360 Cricket Ground",
         "teams": [
             "Collab Kings",
             "Collab Titans"
         ],
-        "status": "upcoming"
+        "status": "UPCOMING"
     },
     {
         "id": "match_2",
@@ -17,11 +19,13 @@
         "league": "League Match 2",
         "date": "Fri, 13 Mar",
         "time": "10 PM - 12 AM",
+        "startTime": "2026-03-13T22:00:00Z",
+        "venue": "Rapid 360 Cricket Ground",
         "teams": [
             "300 Dakaits",
             "MI Warriors"
         ],
-        "status": "upcoming"
+        "status": "UPCOMING"
     },
     {
         "id": "match_3",
@@ -29,11 +33,13 @@
         "league": "League Match 3",
         "date": "Sun, 15 Mar",
         "time": "5 PM - 7 PM",
+        "startTime": "2026-03-15T17:00:00Z",
+        "venue": "Rapid 360 Cricket Ground",
         "teams": [
             "Collab Kings",
             "300.EXE"
         ],
-        "status": "upcoming"
+        "status": "UPCOMING"
     },
     {
         "id": "match_4",
@@ -41,11 +47,13 @@
         "league": "League Match 4",
         "date": "Sun, 15 Mar",
         "time": "7 PM - 9 PM",
+        "startTime": "2026-03-15T19:00:00Z",
+        "venue": "Rapid 360 Cricket Ground",
         "teams": [
             "MI Smashers",
             "300 Dakaits"
         ],
-        "status": "upcoming"
+        "status": "UPCOMING"
     },
     {
         "id": "match_5",
@@ -53,11 +61,13 @@
         "league": "League Match 5",
         "date": "Fri, 20 Mar",
         "time": "7 PM - 8:30 PM",
+        "startTime": "2026-03-20T19:00:00Z",
+        "venue": "Rapid 360 Cricket Ground",
         "teams": [
             "MI Smashers",
             "300.EXE"
         ],
-        "status": "upcoming"
+        "status": "UPCOMING"
     },
     {
         "id": "match_6",
@@ -65,11 +75,13 @@
         "league": "League Match 6",
         "date": "Fri, 20 Mar",
         "time": "8:45 PM - 10:15 PM",
+        "startTime": "2026-03-20T20:45:00Z",
+        "venue": "Rapid 360 Cricket Ground",
         "teams": [
             "MI Warriors",
             "Collab Kings"
         ],
-        "status": "upcoming"
+        "status": "UPCOMING"
     },
     {
         "id": "match_7",
@@ -77,11 +89,13 @@
         "league": "League Match 7",
         "date": "Fri, 20 Mar",
         "time": "10:30 PM - 12 AM",
+        "startTime": "2026-03-20T22:30:00Z",
+        "venue": "Rapid 360 Cricket Ground",
         "teams": [
             "300 Dakaits",
             "Collab Titans"
         ],
-        "status": "upcoming"
+        "status": "UPCOMING"
     },
     {
         "id": "match_8",
@@ -89,11 +103,13 @@
         "league": "League Match 8",
         "date": "Sat, 21 Mar",
         "time": "5 PM - 7 PM",
+        "startTime": "2026-03-21T17:00:00Z",
+        "venue": "Rapid 360 Cricket Ground",
         "teams": [
             "300.EXE",
             "MI Warriors"
         ],
-        "status": "upcoming"
+        "status": "UPCOMING"
     },
     {
         "id": "match_9",
@@ -101,11 +117,13 @@
         "league": "League Match 9",
         "date": "Sat, 21 Mar",
         "time": "7 PM - 9 PM",
+        "startTime": "2026-03-21T19:00:00Z",
+        "venue": "Rapid 360 Cricket Ground",
         "teams": [
             "MI Smashers",
             "Collab Titans"
         ],
-        "status": "upcoming"
+        "status": "UPCOMING"
     },
     {
         "id": "match_10",
@@ -113,11 +131,13 @@
         "league": "Semifinals",
         "date": "Fri, 27 Mar",
         "time": "8 PM - 10 PM",
+        "startTime": "2026-03-27T20:00:00Z",
+        "venue": "Rapid 360 Cricket Ground",
         "teams": [
             "Rank 1",
             "Rank 4"
         ],
-        "status": "upcoming"
+        "status": "UPCOMING"
     },
     {
         "id": "match_11",
@@ -125,6 +145,8 @@
         "league": "Semifinals",
         "date": "Fri, 27 Mar",
         "time": "10 PM - 12 AM",
+        "startTime": "2026-03-27T22:00:00Z",
+        "venue": "Rapid 360 Cricket Ground",
         "teams": [
             "Rank 2",
             "Rank 3"
@@ -137,6 +159,8 @@
         "league": "Grand Finale",
         "date": "Sat, 28 Mar",
         "time": "8 PM - 11 PM",
+        "startTime": "2026-03-28T20:00:00Z",
+        "venue": "Rapid 360 Cricket Ground",
         "teams": [
             "Winner SF1",
             "Winner SF2"
