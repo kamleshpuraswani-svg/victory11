@@ -19,6 +19,11 @@ app.get('/ping', (req, res) => {
 });
 
 // DB Status Route
+let lastDbError = null;
+mongoose.connection.on('error', (err) => {
+    lastDbError = err.message;
+});
+
 app.get('/api/db-status', (req, res) => {
     const status = mongoose.connection.readyState;
     const states = {
@@ -27,9 +32,17 @@ app.get('/api/db-status', (req, res) => {
         2: 'connecting',
         3: 'disconnecting'
     };
+
+    // Mask password in URI for safe viewing
+    const rawUri = process.env.MONGODB_URI || 'not-set';
+    const maskedUri = rawUri.replace(/:([^@]+)@/, ':****@');
+
     res.json({
         status: states[status] || 'unknown',
-        readyState: status
+        readyState: status,
+        lastError: lastDbError,
+        usingUri: maskedUri,
+        timestamp: new Date().toISOString()
     });
 });
 
