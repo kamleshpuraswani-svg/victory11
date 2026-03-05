@@ -103,12 +103,20 @@ const seedAdmin = async () => {
 
 // MongoDB Connection
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/fantasy_cricket';
-mongoose.connect(MONGODB_URI)
+console.log(`📡 Attempting to connect to: ${MONGODB_URI.replace(/:([^@]+)@/, ':****@')}`);
+
+mongoose.connect(MONGODB_URI, {
+    serverSelectionTimeoutMS: 5000, // Timeout after 5s instead of 30s
+    socketTimeoutMS: 45000,
+})
     .then(() => {
-        console.log('Successfully connected to MongoDB');
+        console.log('✅ Successfully connected to MongoDB');
         seedAdmin();
     })
-    .catch(err => console.error('MongoDB connection error:', err));
+    .catch(err => {
+        console.error('❌ MongoDB connection error details:', err);
+        lastDbError = err.message;
+    });
 
 const apiRoutes = require('./routes/api');
 const authRoutes = require('./routes/auth');
