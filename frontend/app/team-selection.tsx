@@ -123,7 +123,7 @@ const TEAM_PLAYERS: Record<string, any[]> = {
 };
 
 export default function TeamSelection() {
-    const { matchId, teamA, teamB, teamId, editSelectedPlayers, editCaptainId, editViceCaptainId } = useLocalSearchParams();
+    const { matchId, teamA, teamB, teamId, editSelectedPlayers, editCaptainId, editViceCaptainId, matchTitle } = useLocalSearchParams();
     const router = useRouter();
     const [players, setPlayers] = useState<any[]>([]);
     const [selectedPlayers, setSelectedPlayers] = useState<string[]>([]);
@@ -252,11 +252,19 @@ export default function TeamSelection() {
             });
 
             console.log("Submit Response:", response.data);
-            Alert.alert("Success", teamId ? "Team updated!" : "Team saved!");
-            router.replace({
-                pathname: '/my-teams',
-                params: { matchId }
-            });
+            Alert.alert(
+                "Success",
+                teamId ? "Team updated!" : "Team saved!",
+                [
+                    {
+                        text: "OK",
+                        onPress: () => router.replace({
+                            pathname: '/my-teams',
+                            params: { matchId, matchTitle }
+                        })
+                    }
+                ]
+            );
         } catch (error: any) {
             console.error("Submit error detail:", error);
             if (error.response) {

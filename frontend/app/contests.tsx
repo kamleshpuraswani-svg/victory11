@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, FlatList, StyleSheet, ActivityIndicator, TouchableOpacity, Alert } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter, useFocusEffect } from 'expo-router';
 import axios from 'axios';
 import { Ionicons } from '@expo/vector-icons';
 import { getAuthToken } from '../utils/storage';
@@ -8,7 +8,7 @@ import { getAuthToken } from '../utils/storage';
 import { API_URL } from '../constants/Config';
 
 export default function Contests() {
-    const { matchId, teamA, teamB } = useLocalSearchParams();
+    const { matchId, teamA, teamB, matchTitle } = useLocalSearchParams();
     const router = useRouter();
     const [contests, setContests] = useState<any[]>([]);
     const [userTeams, setUserTeams] = useState<any[]>([]);
@@ -16,9 +16,11 @@ export default function Contests() {
     const [loading, setLoading] = useState(true);
     const [teamsLoading, setTeamsLoading] = useState(false);
 
-    useEffect(() => {
-        fetchContests();
-    }, [matchId]);
+    useFocusEffect(
+        React.useCallback(() => {
+            fetchContests();
+        }, [matchId])
+    );
 
     const fetchContests = async () => {
         try {
@@ -61,7 +63,7 @@ export default function Contests() {
         // Navigate directly to team selection for this match
         router.push({
             pathname: '/team-selection',
-            params: { matchId, teamA, teamB }
+            params: { matchId, teamA, teamB, matchTitle }
         });
     };
 
@@ -144,6 +146,7 @@ export default function Contests() {
             <Stack.Screen options={{ title: 'Contests' }} />
 
             <View style={styles.matchSummary}>
+                <Text style={styles.matchHeaderText}>{matchTitle || 'Match Details'}</Text>
                 <Text style={styles.matchTeams}>{teamA} vs {teamB}</Text>
             </View>
 
@@ -167,7 +170,8 @@ const styles = StyleSheet.create({
         borderBottomColor: '#eee',
         alignItems: 'center'
     },
-    matchTeams: { fontSize: 16, fontWeight: 'bold', color: '#333' },
+    matchHeaderText: { fontSize: 13, color: '#64748b', textTransform: 'uppercase', marginBottom: 4 },
+    matchTeams: { fontSize: 18, fontWeight: 'bold', color: '#111827' },
     contestCard: {
         backgroundColor: '#fff',
         borderRadius: 12,

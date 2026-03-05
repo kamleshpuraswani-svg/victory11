@@ -76,7 +76,7 @@ export default function MatchList() {
             style={styles.matchCard}
             onPress={() => router.push({
               pathname: '/contests',
-              params: { matchId: item.id, teamA: item.teams[0], teamB: item.teams[1] }
+              params: { matchId: item.id, teamA: item.teams[0], teamB: item.teams[1], matchTitle: item.title }
             })}
           >
             <View style={styles.cardHeader}>
