@@ -7,7 +7,7 @@ import { getAuthToken } from '../utils/storage';
 import { API_URL } from '../constants/Config';
 
 export default function UserTeamDetails() {
-    const { teamId } = useLocalSearchParams();
+    const { teamId, readonly } = useLocalSearchParams();
     const router = useRouter();
 
     const [team, setTeam] = useState<any>(null);
@@ -28,11 +28,29 @@ export default function UserTeamDetails() {
                 return;
             }
 
-            // 1. Fetch team details using the regular user API
-            const teamRes = await axios.get(`${API_URL}/teams/details/${teamId}`, {
+            // 1. Fetch team details using the appropriate API
+            let fetchedTeam;
+            if (readonly === 'true') {
+                // For viewing others, we use an admin or public read-only route if one exists,
+                // or just use admin details API which is currently accessible with a token
+                // Wait, the admin API requires ADMIN role. Let's add a quick public or user-accessible details route.
+                // Actually, the current API /teams/details/:teamId filters by userId.
+                console.log("Readonly mode requested")
+            }
+
+            // To make things simple and secure without massive backend refactoring, 
+            // the /teams/details/:teamId currently restricts to the token owner.
+            // Let's create a specific public view route in the backend api.js first or update it here.
+
+            // Wait, we need to update the backend route /api/teams/public/:teamId or similar
+            // Let's assume we'll just hit the regular route and if it fails, fallback to a new one we create.
+            // For now, let's fetch using a generic fetch if readonly.
+            let url = readonly === 'true' ? `${API_URL}/team-public/${teamId}` : `${API_URL}/teams/details/${teamId}`;
+
+            const teamRes = await axios.get(url, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            const fetchedTeam = teamRes.data.team;
+            fetchedTeam = teamRes.data.team;
             setTeam(fetchedTeam);
 
             // 2. Fetch all players for this match to get player names/roles
@@ -111,7 +129,7 @@ export default function UserTeamDetails() {
 
             <View style={styles.headerCard}>
                 <View style={styles.matchInfoHeader}>
-                    <Text style={styles.matchTitle}>My Selection</Text>
+                    <Text style={styles.matchTitle}>{readonly === 'true' ? 'Team Preview' : 'My Selection'}</Text>
                     <Ionicons name="football" size={24} color="#4caf50" />
                 </View>
                 <View style={styles.statsRow}>
@@ -123,20 +141,22 @@ export default function UserTeamDetails() {
                         <Text style={styles.statValue}>{team.totalPoints || 0}</Text>
                         <Text style={styles.statLabel}>POINTS</Text>
                     </View>
-                    <TouchableOpacity
-                        style={styles.editBtn}
-                        onPress={() => router.push({
-                            pathname: '/team-selection',
-                            params: {
-                                matchId: team.matchId,
-                                isEdit: 'true',
-                                teamId: team._id
-                            }
-                        })}
-                    >
-                        <Ionicons name="create-outline" size={16} color="#4caf50" />
-                        <Text style={styles.editBtnText}>Edit</Text>
-                    </TouchableOpacity>
+                    {readonly !== 'true' && (
+                        <TouchableOpacity
+                            style={styles.editBtn}
+                            onPress={() => router.push({
+                                pathname: '/team-selection',
+                                params: {
+                                    matchId: team.matchId,
+                                    isEdit: 'true',
+                                    teamId: team._id
+                                }
+                            })}
+                        >
+                            <Ionicons name="create-outline" size={16} color="#4caf50" />
+                            <Text style={styles.editBtnText}>Edit</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             </View>
 

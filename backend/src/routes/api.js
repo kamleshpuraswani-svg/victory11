@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const { Team, Match } = require('../models/schema');
+const { User, Team, Match } = require('../models/schema');
 
 // Helper to extract userId from token
 const getUserIdFromToken = (req) => {
@@ -160,7 +160,7 @@ router.get('/teams/:matchId', async (req, res) => {
     }
 });
 
-// 5.1 Fetch details for a specific team
+// 5.1 Fetch details for a specific team (owner only)
 router.get('/teams/details/:teamId', async (req, res) => {
     try {
         const userId = getUserIdFromToken(req);
@@ -176,6 +176,20 @@ router.get('/teams/details/:teamId', async (req, res) => {
     }
 });
 
+// 5.2 Fetch public details for a team (used by leaderboard)
+router.get('/team-public/:teamId', async (req, res) => {
+    try {
+        const team = await Team.findById(req.params.teamId);
+        if (!team) return res.status(404).json({ message: 'Team not found' });
+
+        // Expose team details, don't strictly require owner mapping since it's for the leaderboard UI
+        res.json({ team });
+    } catch (err) {
+        console.error("Fetch public team error:", err);
+        res.status(500).json({ message: 'Error fetching public team details' });
+    }
+});
+
 // 5. Fetch Contests for a Match
 router.get('/contests/:matchId', async (req, res) => {
     try {
@@ -187,6 +201,73 @@ router.get('/contests/:matchId', async (req, res) => {
         });
     } catch (err) {
         res.status(500).json({ message: 'Error fetching contests' });
+    }
+});
+
+// 6. Leaderboard - Global Ranking
+router.get('/leaderboard', async (req, res) => {
+    try {
+        // Aggregate total points for each user across all their teams
+        const leaderboardData = await Team.aggregate([
+            {
+                $group: {
+                    _id: "$userId",
+                    totalPoints: { $sum: "$totalPoints" },
+                    teamCount: { $sum: 1 }
+                }
+            },
+            {
+                $lookup: {
+                    from: "users", // the collection name in MongoDB is usually pluralized 'users'
+                    localField: "_id",
+                    foreignField: "_id",
+                    as: "userInfo"
+                }
+            },
+            {
+                $unwind: {
+                    path: "$userInfo",
+                    preserveNullAndEmptyArrays: false // Only include teams with valid users
+                }
+            },
+            {
+                $project: {
+                    _id: 1,
+                    totalPoints: 1,
+                    teamCount: 1,
+                    name: "$userInfo.name",
+                    email: "$userInfo.email"
+                }
+            },
+            {
+                $sort: { totalPoints: -1 } // Sort by highest points first
+            }
+        ]);
+
+        res.json({ leaderboard: leaderboardData });
+    } catch (err) {
+        console.error("Leaderboard fetch error:", err);
+        res.status(500).json({ message: 'Error fetching leaderboard data' });
+    }
+});
+
+// 6.1 Get teams for a specific user (for viewing from Leaderboard)
+router.get('/leaderboard/:userId/teams', async (req, res) => {
+    try {
+        const { userId } = req.params;
+        const teams = await Team.find({ userId }).sort({ _id: -1 });
+
+        // Fetch user info for the header
+        const user = await User.findById(userId).select('name email');
+
+        if (!user) {
+            return res.status(404).json({ message: 'User not found' });
+        }
+
+        res.json({ user, teams });
+    } catch (err) {
+        console.error("Fetch user teams from leaderboard error:", err);
+        res.status(500).json({ message: 'Error fetching user teams' });
     }
 });
 
