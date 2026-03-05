@@ -8,7 +8,7 @@ import { getAuthToken } from '../utils/storage';
 import { API_URL } from '../constants/Config';
 
 export default function MyTeams() {
-    const { matchId } = useLocalSearchParams();
+    const { matchId, matchTitle } = useLocalSearchParams();
     const router = useRouter();
     const [teams, setTeams] = useState<any[]>([]);
     const [players, setPlayers] = useState<any[]>([]);
@@ -102,7 +102,7 @@ export default function MyTeams() {
 
     return (
         <View style={styles.container}>
-            <Stack.Screen options={{ title: 'My Teams' }} />
+            <Stack.Screen options={{ title: matchTitle ? `My Teams: ${matchTitle}` : 'My Teams' }} />
 
             {teams.length === 0 ? (
                 <View style={styles.center}>
@@ -120,6 +120,13 @@ export default function MyTeams() {
                     data={teams}
                     renderItem={renderTeam}
                     keyExtractor={(item, index) => item._id || index.toString()}
+                    ListHeaderComponent={
+                        matchTitle ? (
+                            <View style={styles.matchHeader}>
+                                <Text style={styles.matchHeaderText}>Teams for {matchTitle}</Text>
+                            </View>
+                        ) : null
+                    }
                     contentContainerStyle={{ padding: 15 }}
                 />
             )}
@@ -130,6 +137,18 @@ export default function MyTeams() {
 const styles = StyleSheet.create({
     container: { flex: 1, backgroundColor: '#f5f7fa' },
     center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: 20 },
+    matchHeader: {
+        backgroundColor: '#1e293b',
+        padding: 12,
+        borderRadius: 8,
+        marginBottom: 15,
+        alignItems: 'center'
+    },
+    matchHeaderText: {
+        color: '#fbbf24',
+        fontWeight: 'bold',
+        fontSize: 14
+    },
     teamCard: {
         backgroundColor: '#fff',
         borderRadius: 12,

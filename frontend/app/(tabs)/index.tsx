@@ -107,7 +107,7 @@ export default function MatchList() {
             </View>
             <View style={styles.cardFooter}>
               <View>
-                <Text style={styles.matchDate}>{item.date || 'Soon'}</Text>
+                <Text style={styles.matchDate}>{item.date || 'Soon'}{item.time ? ` • ${item.time}` : ''}</Text>
                 <Text style={styles.venueText}>🏟️ {item.venue || 'TBD'}</Text>
               </View>
               <TouchableOpacity
@@ -116,7 +116,7 @@ export default function MatchList() {
                   e.stopPropagation();
                   router.push({
                     pathname: '/my-teams',
-                    params: { matchId: item.id }
+                    params: { matchId: item.id, matchTitle: item.title }
                   });
                 }}
               >
