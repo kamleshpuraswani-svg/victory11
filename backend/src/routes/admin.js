@@ -284,19 +284,33 @@ router.post('/matches/:matchId/process-ball', authenticateAdmin, async (req, res
             if (r % 2 !== 0) requiresRotation = true;
 
         } else if (action === 'EXTRAS') {
+            const extraRuns = Number(runs) || 0;
             if (extraType === 'WD') {
                 isLegalBall = false;
-                match.liveScore.runs += 1;
-                bowler.runsConceded += 1;
-                ballString = 'Wd';
+                match.liveScore.runs += (1 + extraRuns);
+                bowler.runsConceded += (1 + extraRuns);
+                ballString = extraRuns > 0 ? `${1 + extraRuns}Wd` : 'Wd';
+                if (extraRuns % 2 !== 0) requiresRotation = true;
+
             } else if (extraType === 'NB') {
                 isLegalBall = false;
-                match.liveScore.runs += 1;
-                bowler.runsConceded += 1;
-                ballString = 'Nb';
+                match.liveScore.runs += (1 + extraRuns);
+                bowler.runsConceded += (1 + extraRuns);
+                striker.ballsFaced += 1; // NB counts as ball faced
+
+                if (extraRuns > 0) {
+                    striker.runs += extraRuns;
+                    if (extraRuns === 4) striker.fours += 1;
+                    if (extraRuns === 6) striker.sixes += 1;
+                    ballString = `${extraRuns}Nb`;
+                } else {
+                    ballString = 'Nb';
+                }
+                if (extraRuns % 2 !== 0) requiresRotation = true;
+
             } else if (extraType === 'LB' || extraType === 'B') {
                 striker.ballsFaced += 1;
-                const r = Number(runs) || 1;
+                const r = extraRuns > 0 ? extraRuns : 1; // Default back to 1 if LB/B pressed but 0 returned
                 match.liveScore.runs += r;
                 ballString = `${r}${extraType.charAt(0)}`;
                 if (r % 2 !== 0) requiresRotation = true;

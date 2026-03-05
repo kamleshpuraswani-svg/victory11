@@ -24,6 +24,7 @@ export default function LiveMatchKeypadScreen() {
     // Modals state for mid-innings (Wicket or Over End)
     const [selectingNewBatter, setSelectingNewBatter] = useState<string | null>(null); // outPlayerId
     const [selectingNewBowler, setSelectingNewBowler] = useState(false);
+    const [selectingExtra, setSelectingExtra] = useState<string | null>(null); // 'WD', 'NB', 'LB', 'B'
 
     useEffect(() => {
         fetchMatchData();
@@ -109,6 +110,16 @@ export default function LiveMatchKeypadScreen() {
         } finally {
             setProcessing(false);
         }
+    };
+
+    const handleExtraPress = (type: string) => {
+        setSelectingExtra(type);
+    };
+
+    const submitExtra = (runs: number) => {
+        if (!selectingExtra) return;
+        processBall('EXTRAS', { extraType: selectingExtra, runs });
+        setSelectingExtra(null);
     };
 
     // --- RENDER HELPERS ---
@@ -279,6 +290,35 @@ export default function LiveMatchKeypadScreen() {
         );
     }
 
+    if (selectingExtra) {
+        return (
+            <View style={styles.container}>
+                <Stack.Screen options={{ title: `Select Extra Runs` }} />
+                <Text style={styles.selectPrompt}>Runs scored off this {selectingExtra}?</Text>
+
+                <View style={[styles.keypadArea, { flex: 0, marginTop: 'auto' }]}>
+                    <View style={styles.keypadRow}>
+                        {['0', '1', '2', '3'].map((r) => (
+                            <TouchableOpacity key={r} style={styles.keyRun} onPress={() => submitExtra(Number(r))}>
+                                <Text style={styles.keyRunText}>{r}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+                    <View style={styles.keypadRow}>
+                        {['4', '5', '6'].map((r) => (
+                            <TouchableOpacity key={r} style={[styles.keyRun, r === '4' && styles.key4, r === '6' && styles.key6]} onPress={() => submitExtra(Number(r))}>
+                                <Text style={[styles.keyRunText, (r === '4' || r === '6') && styles.keyRunTextWhite]}>{r}</Text>
+                            </TouchableOpacity>
+                        ))}
+                        <TouchableOpacity style={[styles.keyRun, { backgroundColor: '#f1f5f9' }]} onPress={() => setSelectingExtra(null)}>
+                            <Text style={[styles.keyRunText, { fontSize: 16, color: '#ef4444' }]}>CANCEL</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            </View>
+        );
+    }
+
     // MAIN KEYPAD VIEW
     return (
         <View style={styles.keypadContainer}>
@@ -374,17 +414,17 @@ export default function LiveMatchKeypadScreen() {
 
                 {/* Extras Row */}
                 <View style={styles.keypadRow}>
-                    <TouchableOpacity style={styles.keyExtra} onPress={() => processBall('EXTRAS', { extraType: 'WD', runs: 0 })} disabled={processing}>
+                    <TouchableOpacity style={styles.keyExtra} onPress={() => handleExtraPress('WD')} disabled={processing}>
                         <Text style={styles.keyExtraText}>WD</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.keyExtra} onPress={() => processBall('EXTRAS', { extraType: 'NB', runs: 0 })} disabled={processing}>
+                    <TouchableOpacity style={styles.keyExtra} onPress={() => handleExtraPress('NB')} disabled={processing}>
                         <Text style={styles.keyExtraText}>NB</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.keyExtra} onPress={() => processBall('EXTRAS', { extraType: 'LB', runs: 1 })} disabled={processing}>
-                        <Text style={styles.keyExtraText}>1LB</Text>
+                    <TouchableOpacity style={styles.keyExtra} onPress={() => handleExtraPress('LB')} disabled={processing}>
+                        <Text style={styles.keyExtraText}>LB</Text>
                     </TouchableOpacity>
-                    <TouchableOpacity style={styles.keyExtra} onPress={() => processBall('EXTRAS', { extraType: 'B', runs: 1 })} disabled={processing}>
-                        <Text style={styles.keyExtraText}>1B</Text>
+                    <TouchableOpacity style={styles.keyExtra} onPress={() => handleExtraPress('B')} disabled={processing}>
+                        <Text style={styles.keyExtraText}>B</Text>
                     </TouchableOpacity>
                 </View>
 
