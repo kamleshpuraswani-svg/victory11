@@ -26,10 +26,11 @@ export default function AdminUsersScreen() {
     const router = useRouter();
 
     useEffect(() => {
+        // Pre-fetch matches for lookups regardless of tab
+        fetchMatches();
+
         if (activeTab === 'USERS') {
             fetchUsers();
-        } else {
-            fetchMatches();
         }
     }, [activeTab]);
 
@@ -95,6 +96,11 @@ export default function AdminUsersScreen() {
         }
     };
 
+    const getMatchTitle = (matchId: string) => {
+        const match = matches.find(m => m.id === matchId);
+        return match ? match.title : matchId;
+    };
+
     const handleLogout = async () => {
         await clearAuthData();
         router.replace('/login');
@@ -125,7 +131,7 @@ export default function AdminUsersScreen() {
                     ) : userTeams.length === 0 ? (
                         <Text style={styles.noTeamsText}>No teams created yet.</Text>
                     ) : (
-                        userTeams.map((team) => (
+                        userTeams.map((team, index) => (
                             <TouchableOpacity
                                 key={team._id}
                                 style={styles.teamItem}
@@ -134,10 +140,14 @@ export default function AdminUsersScreen() {
                                     params: { teamId: team._id }
                                 })}
                             >
-                                <Text style={styles.teamMatch}>Match ID: {team.matchId || 'Unknown'}</Text>
-                                <Text style={styles.teamDetails}>Players: {team.players?.length || 0}/11</Text>
-                                <Text style={styles.teamDetails}>Points: {team.totalPoints || 0}</Text>
-                                {team.captainId && <Text style={styles.teamDetails}>Captain: {team.captainId}</Text>}
+                                <View style={styles.teamRowHeader}>
+                                    <Text style={styles.teamNumber}>TEAM {index + 1}</Text>
+                                    <Text style={styles.teamMatch}>{getMatchTitle(team.matchId)}</Text>
+                                </View>
+                                <View style={styles.teamStatsMini}>
+                                    <Text style={styles.teamDetails}>👥 {team.players?.length || 0}/11</Text>
+                                    <Text style={styles.teamDetails}>🎯 {team.totalPoints || 0} pts</Text>
+                                </View>
                             </TouchableOpacity>
                         ))
                     )}
@@ -310,12 +320,33 @@ const styles = StyleSheet.create({
     teamMatch: {
         fontWeight: '700',
         color: '#1e293b',
-        marginBottom: 4
+        fontSize: 13,
+        flex: 1
+    },
+    teamRowHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 6
+    },
+    teamNumber: {
+        fontSize: 10,
+        fontWeight: '900',
+        color: '#fbbf24',
+        backgroundColor: '#1e293b',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 4,
+        marginRight: 8
+    },
+    teamStatsMini: {
+        flexDirection: 'row',
+        gap: 15
     },
     teamDetails: {
         fontSize: 12,
-        color: '#475569',
-        marginBottom: 2
+        color: '#64748b',
+        fontWeight: '500'
     },
     tabContainer: {
         flexDirection: 'row',

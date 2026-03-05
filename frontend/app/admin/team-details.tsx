@@ -35,10 +35,20 @@ export default function AdminTeamDetails() {
             const fetchedTeam = teamRes.data.team;
             setTeam(fetchedTeam);
 
-            // 2. Fetch all players for this match
+            // 2. Fetch all matches for title lookup
+            const matchesRes = await axios.get(`${API_URL}/matches/upcoming`);
+            const allMatches = matchesRes.data.matches || [];
+
+            // 3. Fetch all players for this match
             if (fetchedTeam?.matchId) {
                 const playersRes = await axios.get(`${API_URL}/players/${fetchedTeam.matchId}`);
                 setPlayers(playersRes.data.players || []);
+            }
+
+            // Enrich team with match title
+            const matchInfo = allMatches.find((m: any) => m.id === fetchedTeam.matchId);
+            if (matchInfo) {
+                setTeam({ ...fetchedTeam, matchTitle: matchInfo.title });
             }
 
         } catch (err: any) {
@@ -97,7 +107,7 @@ export default function AdminTeamDetails() {
             />
 
             <View style={styles.headerCard}>
-                <Text style={styles.matchTitle}>Match: {team.matchId}</Text>
+                <Text style={styles.matchTitle}>{team.matchTitle || team.matchId}</Text>
                 <View style={styles.statsRow}>
                     <Text style={styles.statText}>Players: {team.players?.length || 0}/11</Text>
                     <Text style={styles.statText}>Points: {team.totalPoints || 0}</Text>
