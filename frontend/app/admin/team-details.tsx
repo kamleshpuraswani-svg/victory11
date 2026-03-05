@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator, FlatList, Alert } from 'react-native';
+import { View, Text, StyleSheet, ActivityIndicator, FlatList, Alert, TouchableOpacity } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import axios from 'axios';
 import { getAuthToken } from '../../utils/storage';
-import { API_URL } from '../../constants/Config';
 import { Platform } from 'react-native';
+import { API_URL } from '../../constants/Config';
+import { Ionicons } from '@expo/vector-icons';
 
 export default function AdminTeamDetails() {
     const { teamId } = useLocalSearchParams();
@@ -102,7 +103,12 @@ export default function AdminTeamDetails() {
                 options={{
                     title: 'Team Details',
                     headerStyle: { backgroundColor: '#1e293b' },
-                    headerTintColor: '#fbbf24'
+                    headerTintColor: '#fbbf24',
+                    headerLeft: () => (
+                        <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 10 }}>
+                            <Ionicons name="arrow-back" size={24} color="#fbbf24" />
+                        </TouchableOpacity>
+                    )
                 }}
             />
 
