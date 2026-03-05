@@ -48,18 +48,18 @@ const styles = StyleSheet.create({
   },
   constrainedWidth: {
     width: '100%',
-    maxWidth: 500,
-    // Add a mobile frame look
-    borderRadius: 24,
-    marginVertical: '2%', // Use percentage for zoom flexibility
-    maxHeight: '96%',
+    maxWidth: 420, // More standard mobile width
+    aspectRatio: 9 / 19.5, // Modern smartphone aspect ratio
+    maxHeight: '92%',
+    borderRadius: 40, // More rounded corners like an iPhone
     overflow: 'hidden',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 12 },
-    shadowOpacity: 0.3,
-    shadowRadius: 25,
-    elevation: 20,
-    borderWidth: 1,
-    borderColor: '#334155',
+    shadowOffset: { width: 0, height: 20 },
+    shadowOpacity: 0.5,
+    shadowRadius: 40,
+    elevation: 25,
+    borderWidth: 8, // Thicker 'bezel'
+    borderColor: '#1e293b', // Match the dark theme
+    backgroundColor: '#fff',
   },
 });
