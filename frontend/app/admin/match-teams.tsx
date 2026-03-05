@@ -69,7 +69,17 @@ export default function MatchTeamsScreen() {
                     headerStyle: { backgroundColor: '#1e293b' },
                     headerTintColor: '#fbbf24',
                     headerLeft: () => (
-                        <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 10 }}>
+                        <TouchableOpacity
+                            onPress={() => {
+                                if (router.canGoBack()) {
+                                    router.back();
+                                } else {
+                                    router.replace('/admin/users');
+                                }
+                            }}
+                            style={{ padding: 10, marginLeft: -5 }}
+                            hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                        >
                             <Ionicons name="arrow-back" size={24} color="#fbbf24" />
                         </TouchableOpacity>
                     )
