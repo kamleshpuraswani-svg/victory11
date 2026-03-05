@@ -43,7 +43,8 @@ const matchSchema = new Schema({
     bowlerId: String,
     currentOverBalls: [String],
     battingTeamId: String,
-    bowlingTeamId: String
+    bowlingTeamId: String,
+    lastBallState: { type: Schema.Types.Mixed }
   },
   playerStats: [{
     playerId: String,

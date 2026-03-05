@@ -22,7 +22,13 @@ export default function LiveMatchKeypadScreen() {
     const [selectedBowler, setSelectedBowler] = useState<string | null>(null);
 
     // Modals state for mid-innings (Wicket or Over End)
-    const [selectingNewBatter, setSelectingNewBatter] = useState<string | null>(null); // outPlayerId
+    const [wicketSequence, setWicketSequence] = useState<{
+        active: boolean;
+        step: 'TYPE' | 'OUT_PLAYER' | 'FIELDER' | 'BATTER';
+        type?: string;
+        fielderId?: string;
+        outPlayerId?: string;
+    } | null>(null);
     const [selectingNewBowler, setSelectingNewBowler] = useState(false);
     const [selectingExtra, setSelectingExtra] = useState<string | null>(null); // 'WD', 'NB', 'LB', 'B'
 
@@ -100,8 +106,8 @@ export default function LiveMatchKeypadScreen() {
             if (res.data.overCompleted) {
                 setSelectingNewBowler(true);
             }
-            if (selectingNewBatter) {
-                setSelectingNewBatter(null);
+            if (wicketSequence) {
+                setWicketSequence(null);
             }
 
         } catch (error: any) {
@@ -120,6 +126,43 @@ export default function LiveMatchKeypadScreen() {
         if (!selectingExtra) return;
         processBall('EXTRAS', { extraType: selectingExtra, runs });
         setSelectingExtra(null);
+    };
+
+    const handleUndo = () => {
+        Alert.alert("Undo Last Ball", "Are you sure you want to revert the last delivery?", [
+            { text: 'Cancel', style: 'cancel' },
+            {
+                text: 'Undo', style: 'destructive', onPress: async () => {
+                    try {
+                        setProcessing(true);
+                        const token = await getAuthToken();
+                        const res = await axios.post(`${API_URL}/admin/matches/${matchId}/undo-ball`, {}, { headers: { Authorization: `Bearer ${token}` } });
+                        setMatch(res.data.match);
+                        setSelectingNewBowler(false);
+                        setWicketSequence(null);
+                    } catch (err: any) {
+                        Alert.alert("Error", err.response?.data?.message || "Could not undo ball");
+                    } finally {
+                        setProcessing(false);
+                    }
+                }
+            }
+        ]);
+    };
+
+    const startWicketSequence = () => {
+        setWicketSequence({ active: true, step: 'TYPE' });
+    };
+
+    const handleWicketTypeSelect = (type: string) => {
+        if (type === 'RUN_OUT') {
+            setWicketSequence({ active: true, step: 'OUT_PLAYER', type });
+        } else if (type === 'BOWLED' || type === 'LBW' || type === 'HIT_WICKET') {
+            setWicketSequence({ active: true, step: 'BATTER', type, outPlayerId: match.liveSettings.strikerId });
+        } else {
+            // CAUGHT, STUMPED
+            setWicketSequence({ active: true, step: 'FIELDER', type, outPlayerId: match.liveSettings.strikerId });
+        }
     };
 
     // --- RENDER HELPERS ---
@@ -234,24 +277,91 @@ export default function LiveMatchKeypadScreen() {
     const bowlerStat = getPlayerStat(liveSettings.bowlerId);
 
     // SELECTION VIEWS (WICKET / OVER END)
-    if (selectingNewBatter) {
-        return (
-            <View style={styles.container}>
-                <Stack.Screen options={{ title: 'Select Next Batter' }} />
-                <Text style={styles.selectPrompt}>Who is the next batter in?</Text>
-                <ScrollView>
-                    {players.filter(p => p.team === liveSettings.battingTeamId && p.playerId !== liveSettings.strikerId && p.playerId !== liveSettings.nonStrikerId).map(p => (
-                        <TouchableOpacity
-                            key={p.playerId}
-                            style={styles.listCard}
-                            onPress={() => processBall('WICKET', { outPlayerId: selectingNewBatter, newBatterId: p.playerId })}
-                        >
-                            <Text style={styles.listCardName}>{p.name}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </ScrollView>
-            </View>
-        );
+    if (wicketSequence?.active) {
+        if (wicketSequence.step === 'TYPE') {
+            return (
+                <View style={styles.container}>
+                    <Stack.Screen options={{ title: 'Wicket Type' }} />
+                    <Text style={styles.selectPrompt}>How was the batsman out?</Text>
+                    <ScrollView>
+                        {['BOWLED', 'CAUGHT', 'RUN_OUT', 'STUMPED', 'LBW', 'HIT_WICKET'].map(type => (
+                            <TouchableOpacity key={type} style={styles.listCard} onPress={() => handleWicketTypeSelect(type)}>
+                                <Text style={styles.listCardName}>{type.replace('_', ' ')}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                    <TouchableOpacity style={styles.cancelModalBtn} onPress={() => setWicketSequence(null)}>
+                        <Text style={styles.cancelModalBtnText}>CANCEL</Text>
+                    </TouchableOpacity>
+                </View>
+            );
+        }
+
+        if (wicketSequence.step === 'OUT_PLAYER') {
+            return (
+                <View style={styles.container}>
+                    <Stack.Screen options={{ title: 'Who got out?' }} />
+                    <Text style={styles.selectPrompt}>Which batsman is run out?</Text>
+                    <ScrollView>
+                        {[liveSettings.strikerId, liveSettings.nonStrikerId].map(id => (
+                            <TouchableOpacity key={id} style={styles.listCard} onPress={() => setWicketSequence({ ...wicketSequence, step: 'FIELDER', outPlayerId: id })}>
+                                <Text style={styles.listCardName}>{getPlayerName(id)}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                    <TouchableOpacity style={styles.cancelModalBtn} onPress={() => setWicketSequence(null)}>
+                        <Text style={styles.cancelModalBtnText}>CANCEL</Text>
+                    </TouchableOpacity>
+                </View>
+            );
+        }
+
+        if (wicketSequence.step === 'FIELDER') {
+            return (
+                <View style={styles.container}>
+                    <Stack.Screen options={{ title: 'Select Fielder' }} />
+                    <Text style={styles.selectPrompt}>Who was the fielder involved?</Text>
+                    <ScrollView>
+                        {players.filter(p => p.team === liveSettings.bowlingTeamId).map(p => (
+                            <TouchableOpacity key={p.playerId} style={styles.listCard} onPress={() => setWicketSequence({ ...wicketSequence, step: 'BATTER', fielderId: p.playerId })}>
+                                <Text style={styles.listCardName}>{p.name}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                    <TouchableOpacity style={styles.cancelModalBtn} onPress={() => setWicketSequence(null)}>
+                        <Text style={styles.cancelModalBtnText}>CANCEL</Text>
+                    </TouchableOpacity>
+                </View>
+            );
+        }
+
+        if (wicketSequence.step === 'BATTER') {
+            return (
+                <View style={styles.container}>
+                    <Stack.Screen options={{ title: 'Select Next Batter' }} />
+                    <Text style={styles.selectPrompt}>Who is the next batter in?</Text>
+                    <ScrollView>
+                        {players.filter(p => p.team === liveSettings.battingTeamId && p.playerId !== liveSettings.strikerId && p.playerId !== liveSettings.nonStrikerId).map(p => (
+                            <TouchableOpacity
+                                key={p.playerId}
+                                style={styles.listCard}
+                                onPress={() => processBall('WICKET', {
+                                    wicketType: wicketSequence.type,
+                                    fielderId: wicketSequence.fielderId,
+                                    outPlayerId: wicketSequence.outPlayerId,
+                                    newBatterId: p.playerId
+                                })}
+                            >
+                                <Text style={styles.listCardName}>{p.name}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+                    <TouchableOpacity style={styles.cancelModalBtn} onPress={() => setWicketSequence(null)}>
+                        <Text style={styles.cancelModalBtnText}>CANCEL</Text>
+                    </TouchableOpacity>
+                </View>
+            );
+        }
     }
 
     if (selectingNewBowler) {
@@ -430,8 +540,11 @@ export default function LiveMatchKeypadScreen() {
 
                 {/* Big Actions */}
                 <View style={[styles.keypadRow, { marginTop: 15 }]}>
-                    <TouchableOpacity style={styles.keyWicket} onPress={() => setSelectingNewBatter(liveSettings.strikerId)} disabled={processing}>
+                    <TouchableOpacity style={styles.keyWicket} onPress={startWicketSequence} disabled={processing}>
                         <Text style={styles.keyWicketText}>OUT</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={[styles.keyWicket, { backgroundColor: '#f59e0b' }]} onPress={handleUndo} disabled={processing}>
+                        <Text style={styles.keyWicketText}>UNDO</Text>
                     </TouchableOpacity>
                 </View>
             </View>

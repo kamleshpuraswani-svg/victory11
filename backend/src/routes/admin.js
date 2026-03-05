@@ -253,7 +253,7 @@ const getPlayerStat = (match, playerId) => {
 router.post('/matches/:matchId/process-ball', authenticateAdmin, async (req, res) => {
     try {
         const { matchId } = req.params;
-        const { action, runs, extraType, outPlayerId, newBatterId, newBowlerId } = req.body;
+        const { action, runs, extraType, wicketType, fielderId, outPlayerId, newBatterId, newBowlerId } = req.body;
 
         const match = await Match.findOne({ customId: matchId });
         if (!match) return res.status(404).json({ message: 'Match not found' });
@@ -262,6 +262,13 @@ router.post('/matches/:matchId/process-ball', authenticateAdmin, async (req, res
         if (!settings || !settings.strikerId || !settings.bowlerId) {
             return res.status(400).json({ message: 'Innings not started or missing players setup' });
         }
+
+        // SNAPSHOT STATE FOR UNDO
+        // Convert to plain object, stringify/parse to deep clone, and save to lastBallState
+        // We explicitly omit lastBallState from the clone so we don't nest infinitely
+        const currentStateObj = match.toObject();
+        delete currentStateObj.liveSettings.lastBallState;
+        match.liveSettings.lastBallState = currentStateObj;
 
         const striker = getPlayerStat(match, settings.strikerId);
         const bowler = getPlayerStat(match, settings.bowlerId);
@@ -318,9 +325,18 @@ router.post('/matches/:matchId/process-ball', authenticateAdmin, async (req, res
 
         } else if (action === 'WICKET') {
             striker.ballsFaced += 1;
-            bowler.wickets += 1;
             match.liveScore.wickets += 1;
+
+            if (wicketType !== 'RUN_OUT') {
+                bowler.wickets += 1;
+            }
             ballString = 'W';
+
+            if (fielderId) {
+                const fielder = getPlayerStat(match, fielderId);
+                if (wicketType === 'CAUGHT') fielder.catches += 1;
+                else if (wicketType === 'STUMPED') fielder.stumpings += 1;
+            }
 
             if (newBatterId) {
                 if (outPlayerId === settings.strikerId) {
@@ -423,6 +439,66 @@ router.post('/matches/:matchId/process-ball', authenticateAdmin, async (req, res
     } catch (err) {
         console.error("Process ball error:", err);
         res.status(500).json({ message: 'Server error processing ball' });
+    }
+});
+
+// 3. Undo Last Ball
+router.post('/matches/:matchId/undo-ball', authenticateAdmin, async (req, res) => {
+    try {
+        const { matchId } = req.params;
+        const match = await Match.findOne({ customId: matchId });
+        if (!match) return res.status(404).json({ message: 'Match not found' });
+
+        if (!match.liveSettings || !match.liveSettings.lastBallState) {
+            return res.status(400).json({ message: 'No previous action to undo.' });
+        }
+
+        // Revert State
+        const prevState = match.liveSettings.lastBallState;
+
+        match.liveScore = prevState.liveScore;
+        match.liveSettings = prevState.liveSettings;
+        match.playerStats = prevState.playerStats;
+
+        // Clear the state so we can only undo once at a time
+        match.liveSettings.lastBallState = null;
+
+        await match.save();
+
+        // Recalculate fantasy points for teams based on reverted stats
+        const pointsMap = {};
+        match.playerStats.forEach(p => { pointsMap[p.playerId] = p.fantasyPoints; });
+
+        const teams = await Team.find({ matchId });
+        const bulkOps = teams.map(team => {
+            let totalTeamPoints = 0;
+            team.players.forEach(pid => {
+                let pts = pointsMap[pid] || 0;
+                if (pid === team.captainId) pts *= 2;
+                else if (pid === team.viceCaptainId) pts *= 1.5;
+                totalTeamPoints += pts;
+            });
+            return {
+                updateOne: {
+                    filter: { _id: team._id },
+                    update: { $set: { totalPoints: totalTeamPoints } }
+                }
+            };
+        });
+
+        if (bulkOps.length > 0) await Team.bulkWrite(bulkOps);
+
+        const io = req.app.get('io');
+        if (io) {
+            io.emit('scoreUpdate', match.liveScore);
+            io.emit('statsUpdate', { matchId });
+        }
+
+        res.json({ message: 'Undo successful', match });
+
+    } catch (err) {
+        console.error("Undo ball error:", err);
+        res.status(500).json({ message: 'Server error undoing ball' });
     }
 });
 
