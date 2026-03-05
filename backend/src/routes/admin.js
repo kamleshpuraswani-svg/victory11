@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const { User } = require('../models/schema');
+const { User, Team, Match } = require('../models/schema');
 
 // Middleware to verify admin role
 const authenticateAdmin = async (req, res, next) => {
@@ -22,7 +22,7 @@ const authenticateAdmin = async (req, res, next) => {
         req.user = user;
         next();
     } catch (err) {
-        console.error('Auth error:', err);
+        console.error('Auth error in admin middleware:', err.message);
         return res.status(401).json({ message: 'Unauthorized' });
     }
 };
@@ -34,14 +34,13 @@ router.get('/users', authenticateAdmin, async (req, res) => {
         res.json({ users });
     } catch (err) {
         console.error('Error fetching users:', err);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server error fetching users' });
     }
 });
 
 // GET teams for a specific user
 router.get('/users/:userId/teams', authenticateAdmin, async (req, res) => {
     try {
-        const { Team } = require('../models/schema');
         const { userId } = req.params;
 
         // Find teams and populate necessary details if refs were set up perfectly.
@@ -51,29 +50,28 @@ router.get('/users/:userId/teams', authenticateAdmin, async (req, res) => {
         res.json({ teams });
     } catch (err) {
         console.error('Error fetching user teams:', err);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server error fetching user teams' });
     }
 });
 
 // GET a specific team by ID
 router.get('/teams/:teamId', authenticateAdmin, async (req, res) => {
     try {
-        const { Team } = require('../models/schema');
         const team = await Team.findById(req.params.teamId);
         if (!team) return res.status(404).json({ message: 'Team not found' });
 
         res.json({ team });
     } catch (err) {
         console.error('Error fetching team details:', err);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server error fetching team details' });
     }
 });
 
 // GET all teams for a specific match (with user info)
 router.get('/matches/:matchId/teams', authenticateAdmin, async (req, res) => {
     try {
-        const { Team } = require('../models/schema');
         const { matchId } = req.params;
+        console.log(`[Admin] Fetching teams for matchId: ${matchId}`);
 
         // Find all teams for this match and populate user details (name, email)
         const teams = await Team.find({ matchId })
@@ -83,14 +81,16 @@ router.get('/matches/:matchId/teams', authenticateAdmin, async (req, res) => {
         res.json({ teams });
     } catch (err) {
         console.error('Error fetching match teams:', err);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({
+            message: 'Server error fetching match teams',
+            error: err.message
+        });
     }
 });
 
 // 5. Update match status (UPCOMING -> LIVE -> COMPLETED)
 router.patch('/matches/:matchId/status', authenticateAdmin, async (req, res) => {
     try {
-        const { Match } = require('../models/schema');
         const { status } = req.body;
 
         if (!['UPCOMING', 'LIVE', 'COMPLETED'].includes(status)) {
@@ -108,7 +108,7 @@ router.patch('/matches/:matchId/status', authenticateAdmin, async (req, res) => 
         res.json({ message: `Match status updated to ${status}`, match });
     } catch (err) {
         console.error('Error updating match status:', err);
-        res.status(500).json({ message: 'Server error' });
+        res.status(500).json({ message: 'Server error updating status' });
     }
 });
 

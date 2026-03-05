@@ -33,7 +33,8 @@ export default function MatchTeamsScreen() {
             setTeams(response.data.teams);
         } catch (err: any) {
             console.error("Fetch match teams error:", err);
-            setError("Failed to load users for this match.");
+            const msg = err.response?.data?.message || err.response?.data?.error || "Failed to load users for this match.";
+            setError(msg);
         } finally {
             setLoading(false);
         }
