@@ -324,13 +324,46 @@ router.post('/matches/:matchId/process-ball', authenticateAdmin, async (req, res
             }
 
         } else if (action === 'WICKET') {
-            striker.ballsFaced += 1;
+            const extraRuns = Number(runs) || 0;
+
+            // Handle Extras stacked with Wicket (e.g. Stumped off a Wide, Run Out off NB)
+            if (extraType === 'WD') {
+                isLegalBall = false;
+                match.liveScore.runs += (1 + extraRuns);
+                bowler.runsConceded += (1 + extraRuns);
+                ballString = extraRuns > 0 ? `${1 + extraRuns}Wd+W` : 'Wd+W';
+                if (extraRuns % 2 !== 0) requiresRotation = true;
+            } else if (extraType === 'NB') {
+                isLegalBall = false;
+                match.liveScore.runs += (1 + extraRuns);
+                bowler.runsConceded += (1 + extraRuns);
+                striker.ballsFaced += 1; // NB counts as ball faced
+                ballString = extraRuns > 0 ? `${extraRuns}Nb+W` : 'Nb+W';
+                if (extraRuns > 0) {
+                    striker.runs += extraRuns;
+                    if (extraRuns === 4) striker.fours += 1;
+                    if (extraRuns === 6) striker.sixes += 1;
+                }
+                if (extraRuns % 2 !== 0) requiresRotation = true;
+            } else {
+                striker.ballsFaced += 1;
+                // If it's a legal ball and it's a Run Out where batsmen completed some runs
+                if (wicketType === 'RUN_OUT' && extraRuns > 0) {
+                    match.liveScore.runs += extraRuns;
+                    bowler.runsConceded += extraRuns;
+                    striker.runs += extraRuns;
+                    if (extraRuns === 4) striker.fours += 1;
+                    if (extraRuns === 6) striker.sixes += 1;
+                    if (extraRuns % 2 !== 0) requiresRotation = true;
+                }
+                ballString = extraRuns > 0 ? `W+${extraRuns}` : 'W';
+            }
+
             match.liveScore.wickets += 1;
 
             if (wicketType !== 'RUN_OUT') {
                 bowler.wickets += 1;
             }
-            ballString = 'W';
 
             if (fielderId) {
                 const fielder = getPlayerStat(match, fielderId);
@@ -499,6 +532,33 @@ router.post('/matches/:matchId/undo-ball', authenticateAdmin, async (req, res) =
     } catch (err) {
         console.error("Undo ball error:", err);
         res.status(500).json({ message: 'Server error undoing ball' });
+    }
+});
+
+// 4. Swap Strike Manually
+router.post('/matches/:matchId/swap-strike', authenticateAdmin, async (req, res) => {
+    try {
+        const { matchId } = req.params;
+        const match = await Match.findOne({ customId: matchId });
+        if (!match) return res.status(404).json({ message: 'Match not found' });
+
+        if (!match.liveSettings || !match.liveSettings.strikerId) {
+            return res.status(400).json({ message: 'Innings not started' });
+        }
+
+        const temp = match.liveSettings.strikerId;
+        match.liveSettings.strikerId = match.liveSettings.nonStrikerId;
+        match.liveSettings.nonStrikerId = temp;
+
+        await match.save();
+
+        const io = req.app.get('io');
+        if (io) io.emit('statsUpdate', { matchId });
+
+        res.json({ message: 'Strike swapped successfully', match });
+    } catch (err) {
+        console.error("Swap strike error:", err);
+        res.status(500).json({ message: 'Server error swapping strike' });
     }
 });
 

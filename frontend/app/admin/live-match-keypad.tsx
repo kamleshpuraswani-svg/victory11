@@ -24,10 +24,12 @@ export default function LiveMatchKeypadScreen() {
     // Modals state for mid-innings (Wicket or Over End)
     const [wicketSequence, setWicketSequence] = useState<{
         active: boolean;
-        step: 'TYPE' | 'OUT_PLAYER' | 'FIELDER' | 'BATTER';
+        step: 'DELIVERY_TYPE' | 'TYPE' | 'OUT_PLAYER' | 'FIELDER' | 'RUNS_COMPLETED' | 'BATTER';
         type?: string;
+        deliveryType?: string; // 'LEGAL', 'WD', 'NB'
         fielderId?: string;
         outPlayerId?: string;
+        runsCompleted?: number;
     } | null>(null);
     const [selectingNewBowler, setSelectingNewBowler] = useState(false);
     const [selectingExtra, setSelectingExtra] = useState<string | null>(null); // 'WD', 'NB', 'LB', 'B'
@@ -150,18 +152,38 @@ export default function LiveMatchKeypadScreen() {
         ]);
     };
 
+    const handleSwapStrike = async () => {
+        try {
+            setProcessing(true);
+            const token = await getAuthToken();
+            const res = await axios.post(`${API_URL}/admin/matches/${matchId}/swap-strike`, {}, { headers: { Authorization: `Bearer ${token}` } });
+            setMatch(res.data.match);
+        } catch (err: any) {
+            Alert.alert("Error", err.response?.data?.message || "Could not swap strike");
+        } finally {
+            setProcessing(false);
+        }
+    };
+
     const startWicketSequence = () => {
-        setWicketSequence({ active: true, step: 'TYPE' });
+        // In CricHeroes, first ask the delivery type (Legal, Wide, NB)
+        setWicketSequence({ active: true, step: 'DELIVERY_TYPE' });
+    };
+
+    const handleDeliveryTypeSelect = (deliveryType: string) => {
+        setWicketSequence(prev => ({ ...prev!, step: 'TYPE', deliveryType }));
     };
 
     const handleWicketTypeSelect = (type: string) => {
+        const current = wicketSequence!;
         if (type === 'RUN_OUT') {
-            setWicketSequence({ active: true, step: 'OUT_PLAYER', type });
+            // Run out: need to select which batsman, then fielder, then runs, then new batter
+            setWicketSequence({ ...current, step: 'OUT_PLAYER', type });
         } else if (type === 'BOWLED' || type === 'LBW' || type === 'HIT_WICKET') {
-            setWicketSequence({ active: true, step: 'BATTER', type, outPlayerId: match.liveSettings.strikerId });
+            setWicketSequence({ ...current, step: 'BATTER', type, outPlayerId: match.liveSettings.strikerId });
         } else {
-            // CAUGHT, STUMPED
-            setWicketSequence({ active: true, step: 'FIELDER', type, outPlayerId: match.liveSettings.strikerId });
+            // CAUGHT, STUMPED — need fielder selection
+            setWicketSequence({ ...current, step: 'FIELDER', type, outPlayerId: match.liveSettings.strikerId });
         }
     };
 
@@ -278,13 +300,42 @@ export default function LiveMatchKeypadScreen() {
 
     // SELECTION VIEWS (WICKET / OVER END)
     if (wicketSequence?.active) {
-        if (wicketSequence.step === 'TYPE') {
+        if (wicketSequence.step === 'DELIVERY_TYPE') {
             return (
                 <View style={styles.container}>
-                    <Stack.Screen options={{ title: 'Wicket Type' }} />
-                    <Text style={styles.selectPrompt}>How was the batsman out?</Text>
+                    <Stack.Screen options={{ title: 'Wicket: Delivery Type' }} />
+                    <Text style={styles.selectPrompt}>Was the delivery a...</Text>
+                    {[
+                        { label: '⚡ Legal Delivery', value: 'LEGAL' },
+                        { label: '🔇 Wide', value: 'WD' },
+                        { label: '🔂 No Ball', value: 'NB' },
+                    ].map(d => (
+                        <TouchableOpacity key={d.value} style={styles.listCard} onPress={() => handleDeliveryTypeSelect(d.value)}>
+                            <Text style={styles.listCardName}>{d.label}</Text>
+                        </TouchableOpacity>
+                    ))}
+                    <TouchableOpacity style={styles.cancelModalBtn} onPress={() => setWicketSequence(null)}>
+                        <Text style={styles.cancelModalBtnText}>CANCEL</Text>
+                    </TouchableOpacity>
+                </View>
+            );
+        }
+
+        if (wicketSequence.step === 'TYPE') {
+            const delivStr = wicketSequence.deliveryType === 'WD' ? ' (Wide)' : wicketSequence.deliveryType === 'NB' ? ' (No Ball)' : '';
+            // Filter wicket types based on delivery type  
+            // Off Wide: only Stumped, Run Out, Hit Wicket
+            // Off NB: only Run Out
+            // Legal: all types
+            let wicketTypes = ['BOWLED', 'CAUGHT', 'RUN_OUT', 'STUMPED', 'LBW', 'HIT_WICKET'];
+            if (wicketSequence.deliveryType === 'WD') wicketTypes = ['STUMPED', 'RUN_OUT', 'HIT_WICKET'];
+            if (wicketSequence.deliveryType === 'NB') wicketTypes = ['RUN_OUT'];
+            return (
+                <View style={styles.container}>
+                    <Stack.Screen options={{ title: `How Out${delivStr}?` }} />
+                    <Text style={styles.selectPrompt}>How was the batsman out{delivStr}?</Text>
                     <ScrollView>
-                        {['BOWLED', 'CAUGHT', 'RUN_OUT', 'STUMPED', 'LBW', 'HIT_WICKET'].map(type => (
+                        {wicketTypes.map(type => (
                             <TouchableOpacity key={type} style={styles.listCard} onPress={() => handleWicketTypeSelect(type)}>
                                 <Text style={styles.listCardName}>{type.replace('_', ' ')}</Text>
                             </TouchableOpacity>
@@ -320,14 +371,41 @@ export default function LiveMatchKeypadScreen() {
             return (
                 <View style={styles.container}>
                     <Stack.Screen options={{ title: 'Select Fielder' }} />
-                    <Text style={styles.selectPrompt}>Who was the fielder involved?</Text>
+                    <Text style={styles.selectPrompt}>Who took the {wicketSequence.type === 'STUMPED' ? 'stumping' : 'catch'}?</Text>
                     <ScrollView>
                         {players.filter(p => p.team === liveSettings.bowlingTeamId).map(p => (
-                            <TouchableOpacity key={p.playerId} style={styles.listCard} onPress={() => setWicketSequence({ ...wicketSequence, step: 'BATTER', fielderId: p.playerId })}>
+                            <TouchableOpacity key={p.playerId} style={styles.listCard}
+                                onPress={() => setWicketSequence({
+                                    ...wicketSequence,
+                                    step: wicketSequence.type === 'RUN_OUT' ? 'RUNS_COMPLETED' : 'BATTER',
+                                    fielderId: p.playerId
+                                })}>
                                 <Text style={styles.listCardName}>{p.name}</Text>
                             </TouchableOpacity>
                         ))}
                     </ScrollView>
+                    <TouchableOpacity style={styles.cancelModalBtn} onPress={() => setWicketSequence(null)}>
+                        <Text style={styles.cancelModalBtnText}>CANCEL</Text>
+                    </TouchableOpacity>
+                </View>
+            );
+        }
+
+        if (wicketSequence.step === 'RUNS_COMPLETED') {
+            return (
+                <View style={styles.container}>
+                    <Stack.Screen options={{ title: 'Runs Completed' }} />
+                    <Text style={styles.selectPrompt}>How many runs were completed before the Run Out?</Text>
+                    <View style={[styles.keypadArea, { flex: 0, marginTop: 'auto' }]}>
+                        <View style={styles.keypadRow}>
+                            {[0, 1, 2, 3].map(r => (
+                                <TouchableOpacity key={r} style={styles.keyRun}
+                                    onPress={() => setWicketSequence({ ...wicketSequence, step: 'BATTER', runsCompleted: r })}>
+                                    <Text style={styles.keyRunText}>{r}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </View>
                     <TouchableOpacity style={styles.cancelModalBtn} onPress={() => setWicketSequence(null)}>
                         <Text style={styles.cancelModalBtnText}>CANCEL</Text>
                     </TouchableOpacity>
@@ -349,7 +427,9 @@ export default function LiveMatchKeypadScreen() {
                                     wicketType: wicketSequence.type,
                                     fielderId: wicketSequence.fielderId,
                                     outPlayerId: wicketSequence.outPlayerId,
-                                    newBatterId: p.playerId
+                                    newBatterId: p.playerId,
+                                    runs: wicketSequence.runsCompleted || 0,
+                                    extraType: wicketSequence.deliveryType !== 'LEGAL' ? wicketSequence.deliveryType : undefined
                                 })}
                             >
                                 <Text style={styles.listCardName}>{p.name}</Text>
@@ -396,6 +476,10 @@ export default function LiveMatchKeypadScreen() {
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
+                {/* Allow undoing the last ball (e.g., if the 6th ball was wrong) */}
+                <TouchableOpacity style={[styles.cancelModalBtn, { backgroundColor: '#fef3c7' }]} onPress={handleUndo}>
+                    <Text style={[styles.cancelModalBtnText, { color: '#b45309' }]}>↩ UNDO LAST BALL INSTEAD</Text>
+                </TouchableOpacity>
             </View>
         );
     }
@@ -452,6 +536,7 @@ export default function LiveMatchKeypadScreen() {
                     <Text style={styles.statsHeaderCell}>B</Text>
                     <Text style={styles.statsHeaderCell}>4s</Text>
                     <Text style={styles.statsHeaderCell}>6s</Text>
+                    <Text style={styles.statsHeaderCell}>⇆</Text>
                 </View>
                 <View style={styles.statsRow}>
                     <Text style={[styles.statsCellName, { color: '#0284c7', fontWeight: '800' }]}>{getPlayerName(liveSettings.strikerId)} *</Text>
@@ -459,6 +544,9 @@ export default function LiveMatchKeypadScreen() {
                     <Text style={styles.statsCell}>{strikerStat.ballsFaced}</Text>
                     <Text style={styles.statsCell}>{strikerStat.fours}</Text>
                     <Text style={styles.statsCell}>{strikerStat.sixes}</Text>
+                    <TouchableOpacity onPress={handleSwapStrike} disabled={processing} style={{ flex: 1, alignItems: 'center' }}>
+                        <Text style={{ fontSize: 18, color: '#0284c7' }}>⇆</Text>
+                    </TouchableOpacity>
                 </View>
                 <View style={styles.statsRow}>
                     <Text style={styles.statsCellName}>{getPlayerName(liveSettings.nonStrikerId)}</Text>
@@ -466,6 +554,7 @@ export default function LiveMatchKeypadScreen() {
                     <Text style={styles.statsCell}>{nonStrikerStat.ballsFaced}</Text>
                     <Text style={styles.statsCell}>{nonStrikerStat.fours}</Text>
                     <Text style={styles.statsCell}>{nonStrikerStat.sixes}</Text>
+                    <View style={{ flex: 1 }} />
                 </View>
             </View>
 
@@ -620,5 +709,7 @@ const styles = StyleSheet.create({
 
     selectPrompt: { fontSize: 18, fontWeight: '800', color: '#1e293b', textAlign: 'center', marginVertical: 20 },
     listCard: { backgroundColor: '#fff', marginHorizontal: 20, marginBottom: 10, padding: 20, borderRadius: 10, borderWidth: 1, borderColor: '#e2e8f0' },
-    listCardName: { fontSize: 16, fontWeight: '700', color: '#0f172a' }
+    listCardName: { fontSize: 16, fontWeight: '700', color: '#0f172a' },
+    cancelModalBtn: { backgroundColor: '#fee2e2', padding: 16, marginHorizontal: 20, marginBottom: 20, marginTop: 10, borderRadius: 10, alignItems: 'center' },
+    cancelModalBtnText: { color: '#dc2626', fontSize: 14, fontWeight: '800', letterSpacing: 1 }
 });
