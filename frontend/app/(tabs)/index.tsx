@@ -9,7 +9,7 @@ const ALL_MATCHES = [
   {
     "id": "match_1",
     "league": "League Match 1",
-    "date": "Fri, 13 Mar",
+    "date": "13/03/2026",
     "time": "8 PM - 10 PM",
     "venue": "Rapid 360 Cricket Ground",
     "teams": ["Collab Kings", "Collab Titans"]
@@ -17,7 +17,7 @@ const ALL_MATCHES = [
   {
     "id": "match_2",
     "league": "League Match 2",
-    "date": "Fri, 13 Mar",
+    "date": "13/03/2026",
     "time": "10 PM - 12 AM",
     "venue": "Rapid 360 Cricket Ground",
     "teams": ["300 Dakaits", "MI Warriors"]
@@ -25,7 +25,7 @@ const ALL_MATCHES = [
   {
     "id": "match_3",
     "league": "League Match 3",
-    "date": "Sun, 15 Mar",
+    "date": "15/03/2026",
     "time": "5 PM - 7 PM",
     "venue": "Rapid 360 Cricket Ground",
     "teams": ["Collab Kings", "300.EXE"]
@@ -33,7 +33,7 @@ const ALL_MATCHES = [
   {
     "id": "match_4",
     "league": "League Match 4",
-    "date": "Sun, 15 Mar",
+    "date": "15/03/2026",
     "time": "7 PM - 9 PM",
     "venue": "Rapid 360 Cricket Ground",
     "teams": ["MI Smashers", "300 Dakaits"]
@@ -41,7 +41,7 @@ const ALL_MATCHES = [
   {
     "id": "match_5",
     "league": "League Match 5",
-    "date": "Fri, 20 Mar",
+    "date": "20/03/2026",
     "time": "7 PM - 8:30 PM",
     "venue": "Rapid 360 Cricket Ground",
     "teams": ["MI Smashers", "300.EXE"]
@@ -49,7 +49,7 @@ const ALL_MATCHES = [
   {
     "id": "match_6",
     "league": "League Match 6",
-    "date": "Fri, 20 Mar",
+    "date": "20/03/2026",
     "time": "8:45 PM - 10:15 PM",
     "venue": "Rapid 360 Cricket Ground",
     "teams": ["MI Warriors", "Collab Kings"]
@@ -57,7 +57,7 @@ const ALL_MATCHES = [
   {
     "id": "match_7",
     "league": "League Match 7",
-    "date": "Fri, 20 Mar",
+    "date": "20/03/2026",
     "time": "10:30 PM - 12 AM",
     "venue": "Rapid 360 Cricket Ground",
     "teams": ["300 Dakaits", "Collab Titans"]
@@ -65,7 +65,7 @@ const ALL_MATCHES = [
   {
     "id": "match_8",
     "league": "League Match 8",
-    "date": "Sat, 21 Mar",
+    "date": "21/03/2026",
     "time": "5 PM - 7 PM",
     "venue": "Rapid 360 Cricket Ground",
     "teams": ["300.EXE", "MI Warriors"]
@@ -73,7 +73,7 @@ const ALL_MATCHES = [
   {
     "id": "match_9",
     "league": "League Match 9",
-    "date": "Sat, 21 Mar",
+    "date": "21/03/2026",
     "time": "7 PM - 9 PM",
     "venue": "Rapid 360 Cricket Ground",
     "teams": ["MI Smashers", "Collab Titans"]
@@ -81,7 +81,7 @@ const ALL_MATCHES = [
   {
     "id": "match_10",
     "league": "Semifinals",
-    "date": "Fri, 27 Mar",
+    "date": "27/03/2026",
     "time": "8 PM - 10 PM",
     "venue": "Rapid 360 Cricket Ground",
     "teams": ["Rank 1", "Rank 4"]
@@ -89,7 +89,7 @@ const ALL_MATCHES = [
   {
     "id": "match_11",
     "league": "Semifinals",
-    "date": "Fri, 27 Mar",
+    "date": "27/03/2026",
     "time": "10 PM - 12 AM",
     "venue": "Rapid 360 Cricket Ground",
     "teams": ["Rank 2", "Rank 3"]
@@ -97,7 +97,7 @@ const ALL_MATCHES = [
   {
     "id": "match_12",
     "league": "Grand Finale",
-    "date": "Sat, 28 Mar",
+    "date": "28/03/2026",
     "time": "8 PM - 11 PM",
     "venue": "Rapid 360 Cricket Ground",
     "teams": ["Winner SF1", "Winner SF2"]

@@ -163,7 +163,7 @@ export default function AdminUsersScreen() {
             </View>
             <View style={styles.matchDetailsRow}>
                 <Text style={styles.matchDetailText}>🏟️ {item.venue || 'N/A'}</Text>
-                <Text style={styles.matchDetailText}>🕒 {new Date(item.startTime).toLocaleString([], { dateStyle: 'short', timeStyle: 'short' })}</Text>
+                <Text style={styles.matchDetailText}>🕒 {new Date(item.startTime).toLocaleDateString('en-GB') + ' ' + new Date(item.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</Text>
             </View>
         </TouchableOpacity>
     );
