@@ -4,6 +4,7 @@ import { Stack, useRouter } from 'expo-router';
 import { getAuthToken, clearAuthData } from '../../utils/storage';
 import axios from 'axios';
 import { API_URL } from '../../constants/Config';
+import { io } from 'socket.io-client';
 
 const ALL_MATCHES: any[] = []; // Initialize empty, fetch from DB
 
@@ -14,6 +15,8 @@ export default function MatchList() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    let socket: any;
+
     async function initialize() {
       try {
         const token = await getAuthToken();
@@ -21,6 +24,12 @@ export default function MatchList() {
           router.replace('/');
           return;
         }
+
+        // Connect to Socket.io for live updates
+        socket = io(API_URL);
+        socket.on('scoreUpdate', (data: any) => {
+          setMatches(prev => prev.map(m => m.id === data.matchId ? { ...m, liveScore: data.liveScore } : m));
+        });
 
         // Fetch real matches from API
         try {
@@ -30,7 +39,6 @@ export default function MatchList() {
           }
         } catch (apiErr) {
           console.error('Failed to fetch matches from API, using fallback:', apiErr);
-          // Fallback is already in state as ALL_MATCHES
         }
 
         setIsReady(true);
@@ -42,6 +50,10 @@ export default function MatchList() {
       }
     }
     initialize();
+
+    return () => {
+      if (socket) socket.disconnect();
+    };
   }, []);
 
   if (loading || !isReady) {
@@ -100,11 +112,27 @@ export default function MatchList() {
               <View style={styles.teamContainer}>
                 <Text style={styles.teamText}>{item.teams?.[0] || 'TBD'}</Text>
               </View>
-              <Text style={styles.vsText}>VS</Text>
+              <View style={styles.scoreContainer}>
+                {item.status === 'LIVE' && item.liveScore ? (
+                  <View style={styles.liveScoreBadge}>
+                    <Text style={styles.liveScoreText}>
+                      {item.liveScore.runs}/{item.liveScore.wickets} ({item.liveScore.overs}.{item.liveScore.balls})
+                    </Text>
+                  </View>
+                ) : (
+                  <Text style={styles.vsText}>VS</Text>
+                )}
+              </View>
               <View style={styles.teamContainer}>
                 <Text style={styles.teamText}>{item.teams?.[1] || 'TBD'}</Text>
               </View>
             </View>
+
+            {item.status === 'LIVE' && item.liveScore?.lastEvent && (
+              <View style={styles.commentaryBox}>
+                <Text style={styles.commentaryText}>⚽ {item.liveScore.lastEvent}</Text>
+              </View>
+            )}
             <View style={styles.cardFooter}>
               <View>
                 <Text style={styles.matchDate}>{item.date || 'Soon'}{item.time ? ` • ${item.time}` : ''}</Text>
@@ -253,5 +281,32 @@ const styles = StyleSheet.create({
     color: '#fbbf24',
     fontWeight: '800',
     fontSize: 10
+  },
+  scoreContainer: { width: 100, alignItems: 'center' },
+  liveScoreBadge: {
+    backgroundColor: '#fff7ed',
+    borderWidth: 1,
+    borderColor: '#fed7aa',
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 8,
+  },
+  liveScoreText: {
+    color: '#ea580c',
+    fontSize: 14,
+    fontWeight: '800'
+  },
+  commentaryBox: {
+    backgroundColor: '#f8fafc',
+    padding: 8,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: '#4caf50',
+    marginBottom: 10
+  },
+  commentaryText: {
+    fontSize: 12,
+    color: '#475569',
+    fontStyle: 'italic'
   }
 });

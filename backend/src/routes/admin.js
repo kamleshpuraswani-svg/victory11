@@ -112,4 +112,31 @@ router.patch('/matches/:matchId/status', authenticateAdmin, async (req, res) => 
     }
 });
 
+// 6. Update match live score
+router.put('/matches/:matchId/score', authenticateAdmin, async (req, res) => {
+    try {
+        const { liveScore } = req.body;
+
+        const match = await Match.findOneAndUpdate(
+            { customId: req.params.matchId },
+            { liveScore },
+            { new: true }
+        );
+
+        if (!match) return res.status(404).json({ message: 'Match not found' });
+
+        // Emit real-time update
+        const io = req.app.get('io');
+        if (io) {
+            io.emit('scoreUpdate', { matchId: req.params.matchId, liveScore: match.liveScore });
+            console.log(`[Socket] Emitted scoreUpdate for ${req.params.matchId}`);
+        }
+
+        res.json({ message: 'Score updated successfully', liveScore: match.liveScore });
+    } catch (err) {
+        console.error('Error updating match score:', err);
+        res.status(500).json({ message: 'Server error updating score' });
+    }
+});
+
 module.exports = router;

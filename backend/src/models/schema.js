@@ -27,7 +27,16 @@ const matchSchema = new Schema({
     name: String,
     role: String,
     credits: Number
-  }]
+  }],
+  liveScore: {
+    runs: { type: Number, default: 0 },
+    wickets: { type: Number, default: 0 },
+    overs: { type: Number, default: 0 },
+    balls: { type: Number, default: 0 },
+    target: { type: Number },
+    battingTeam: { type: String },
+    lastEvent: { type: String } // e.g., "4 runs by Sanskar"
+  }
 });
 
 const teamSchema = new Schema({

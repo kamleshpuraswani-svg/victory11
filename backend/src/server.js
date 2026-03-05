@@ -147,6 +147,12 @@ mongoose.connect(MONGODB_URI, {
         lastDbError = err.message;
     });
 
+const server = http.createServer(app);
+const io = new Server(server, { cors: { origin: "*" } });
+
+// Expose io to routes
+app.set('io', io);
+
 const apiRoutes = require('./routes/api');
 const authRoutes = require('./routes/auth');
 const adminRoutes = require('./routes/admin');
@@ -158,9 +164,6 @@ app.use('/api', apiRoutes);
 
 // Error handler must be last
 app.use(errorHandler);
-
-const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: "*" } });
 
 // Emit real-time score updates to users viewing a specific match
 io.on('connection', (socket) => {

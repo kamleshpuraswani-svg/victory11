@@ -211,6 +211,18 @@ export default function AdminUsersScreen() {
                     <Text style={styles.statusBtnText}>COMPLETED</Text>
                 </TouchableOpacity>
             </View>
+
+            {item.status === 'LIVE' && (
+                <TouchableOpacity
+                    style={styles.liveScoreBtn}
+                    onPress={() => router.push({
+                        pathname: '/admin/match-score',
+                        params: { matchId: item.id, teamA: item.teams[0], teamB: item.teams[1] }
+                    })}
+                >
+                    <Text style={styles.liveScoreBtnText}>⚡ UPDATE LIVE SCORE</Text>
+                </TouchableOpacity>
+            )}
         </TouchableOpacity>
     );
 
@@ -478,5 +490,19 @@ const styles = StyleSheet.create({
     },
     activeStatusBtnUpcoming: { backgroundColor: '#e1f5fe', borderColor: '#0288d1' },
     activeStatusBtnLive: { backgroundColor: '#fef3c7', borderColor: '#d97706' },
-    activeStatusBtnCompleted: { backgroundColor: '#f0fdf4', borderColor: '#16a34a' }
+    activeStatusBtnCompleted: { backgroundColor: '#f0fdf4', borderColor: '#16a34a' },
+    liveScoreBtn: {
+        backgroundColor: '#1e293b',
+        marginTop: 12,
+        paddingVertical: 10,
+        borderRadius: 6,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#fbbf24'
+    },
+    liveScoreBtnText: {
+        color: '#fbbf24',
+        fontWeight: '900',
+        fontSize: 12
+    }
 });
