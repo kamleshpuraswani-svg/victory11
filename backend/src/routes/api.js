@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const jwt = require('jsonwebtoken');
-const { Team } = require('../models/schema');
+const { Team, Match } = require('../models/schema');
 
 // Helper to extract userId from token
 const getUserIdFromToken = (req) => {
@@ -20,7 +20,6 @@ const getUserIdFromToken = (req) => {
 
 // 1. Matches and Teams Logic below
 
-const { Team, Match } = require('../models/schema');
 
 // 2. Fetch All Matches from DB
 router.get('/matches/upcoming', async (req, res) => {
