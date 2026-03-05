@@ -139,11 +139,11 @@ router.put('/matches/:matchId/score', authenticateAdmin, async (req, res) => {
     }
 });
 
-// Match Scorecard & Points Calculation API
+// Match Scorecard & Points Calculation API (Legacy)
 router.put('/matches/:matchId/player-stats', authenticateAdmin, async (req, res) => {
     try {
         const matchId = req.params.matchId;
-        const { playerStats } = req.body; // Array of { playerId, runs, wickets, catches, stumpings }
+        const { playerStats } = req.body;
 
         if (!playerStats || !Array.isArray(playerStats)) {
             return res.status(400).json({ message: 'Invalid playerStats array' });
@@ -152,51 +152,30 @@ router.put('/matches/:matchId/player-stats', authenticateAdmin, async (req, res)
         const match = await Match.findOne({ customId: matchId });
         if (!match) return res.status(404).json({ message: 'Match not found' });
 
-        // 1. Calculate base fantasy points for each player
-        // Point System: Run=1, Wicket=25, Catch=8, Stumping=12
         const processedStats = playerStats.map(stat => {
             const runs = Number(stat.runs) || 0;
             const wickets = Number(stat.wickets) || 0;
             const catches = Number(stat.catches) || 0;
             const stumpings = Number(stat.stumpings) || 0;
-
             const fantasyPoints = (runs * 1) + (wickets * 25) + (catches * 8) + (stumpings * 12);
-
-            return {
-                playerId: stat.playerId,
-                runs, wickets, catches, stumpings, fantasyPoints
-            };
+            return { playerId: stat.playerId, runs, wickets, catches, stumpings, fantasyPoints };
         });
 
-        // 2. Save stats to the Match document
         match.playerStats = processedStats;
         await match.save();
 
-        // Create a quick lookup map for player points
         const pointsMap = {};
-        processedStats.forEach(p => {
-            pointsMap[p.playerId] = p.fantasyPoints;
-        });
+        processedStats.forEach(p => { pointsMap[p.playerId] = p.fantasyPoints; });
 
-        // 3. Update all Teams that belong to this match
         const teams = await Team.find({ matchId });
-
         const bulkOps = teams.map(team => {
             let totalTeamPoints = 0;
-
             team.players.forEach(playerId => {
                 let playerPts = pointsMap[playerId] || 0;
-
-                // Apply Multipliers
-                if (playerId === team.captainId) {
-                    playerPts *= 2;
-                } else if (playerId === team.viceCaptainId) {
-                    playerPts *= 1.5;
-                }
-
+                if (playerId === team.captainId) playerPts *= 2;
+                else if (playerId === team.viceCaptainId) playerPts *= 1.5;
                 totalTeamPoints += playerPts;
             });
-
             return {
                 updateOne: {
                     filter: { _id: team._id },
@@ -205,20 +184,231 @@ router.put('/matches/:matchId/player-stats', authenticateAdmin, async (req, res)
             };
         });
 
-        if (bulkOps.length > 0) {
-            await Team.bulkWrite(bulkOps);
-        }
+        if (bulkOps.length > 0) await Team.bulkWrite(bulkOps);
 
-        // Emit socket event if we want the frontend to refresh stats instantly
         const io = req.app.get('io');
-        if (io) {
-            io.emit('statsUpdate', { matchId });
-        }
+        if (io) io.emit('statsUpdate', { matchId });
 
         res.json({ message: 'Player stats updated and team points calculated successfully.' });
     } catch (err) {
         console.error("Update player stats error:", err);
         res.status(500).json({ message: 'Error updating player stats', error: err.message });
+    }
+});
+
+// Ball-by-Ball Live Scoring Engine
+
+// 1. Start match / Setup Innings
+router.post('/matches/:matchId/start-innings', authenticateAdmin, async (req, res) => {
+    try {
+        const { matchId } = req.params;
+        const { battingTeamId, bowlingTeamId, strikerId, nonStrikerId, bowlerId } = req.body;
+
+        const match = await Match.findOne({ customId: matchId });
+        if (!match) return res.status(404).json({ message: 'Match not found' });
+
+        match.liveSettings = {
+            battingTeamId,
+            bowlingTeamId,
+            strikerId,
+            nonStrikerId,
+            bowlerId,
+            currentOverBalls: []
+        };
+
+        // Ensure playerStats exist for these players
+        [strikerId, nonStrikerId, bowlerId].forEach(id => {
+            if (!match.playerStats.find(ps => ps.playerId === id)) {
+                match.playerStats.push({ playerId: id });
+            }
+        });
+
+        match.liveScore.battingTeam = battingTeamId;
+        match.status = 'LIVE';
+
+        await match.save();
+
+        const io = req.app.get('io');
+        if (io) io.emit('statsUpdate', { matchId });
+
+        res.json({ message: 'Innings started successfully', match });
+
+    } catch (err) {
+        console.error("Start innings error:", err);
+        res.status(500).json({ message: 'Server error starting innings' });
+    }
+});
+
+const getPlayerStat = (match, playerId) => {
+    let stat = match.playerStats.find(ps => ps.playerId === playerId);
+    if (!stat) {
+        stat = { playerId, runs: 0, ballsFaced: 0, fours: 0, sixes: 0, overs: 0, bowledBalls: 0, runsConceded: 0, wickets: 0, maidens: 0, catches: 0, stumpings: 0, fantasyPoints: 0 };
+        match.playerStats.push(stat);
+        stat = match.playerStats[match.playerStats.length - 1];
+    }
+    return stat;
+};
+
+// 2. Process Ball
+router.post('/matches/:matchId/process-ball', authenticateAdmin, async (req, res) => {
+    try {
+        const { matchId } = req.params;
+        const { action, runs, extraType, outPlayerId, newBatterId, newBowlerId } = req.body;
+
+        const match = await Match.findOne({ customId: matchId });
+        if (!match) return res.status(404).json({ message: 'Match not found' });
+
+        const settings = match.liveSettings;
+        if (!settings || !settings.strikerId || !settings.bowlerId) {
+            return res.status(400).json({ message: 'Innings not started or missing players setup' });
+        }
+
+        const striker = getPlayerStat(match, settings.strikerId);
+        const bowler = getPlayerStat(match, settings.bowlerId);
+
+        let ballString = '';
+        let isLegalBall = true;
+        let requiresRotation = false;
+
+        if (action === 'RUN') {
+            const r = Number(runs) || 0;
+            striker.runs += r;
+            striker.ballsFaced += 1;
+            bowler.runsConceded += r;
+
+            if (r === 4) { striker.fours += 1; ballString = '4'; }
+            else if (r === 6) { striker.sixes += 1; ballString = '6'; }
+            else { ballString = r.toString(); }
+
+            match.liveScore.runs += r;
+            if (r % 2 !== 0) requiresRotation = true;
+
+        } else if (action === 'EXTRAS') {
+            if (extraType === 'WD') {
+                isLegalBall = false;
+                match.liveScore.runs += 1;
+                bowler.runsConceded += 1;
+                ballString = 'Wd';
+            } else if (extraType === 'NB') {
+                isLegalBall = false;
+                match.liveScore.runs += 1;
+                bowler.runsConceded += 1;
+                ballString = 'Nb';
+            } else if (extraType === 'LB' || extraType === 'B') {
+                striker.ballsFaced += 1;
+                const r = Number(runs) || 1;
+                match.liveScore.runs += r;
+                ballString = `${r}${extraType.charAt(0)}`;
+                if (r % 2 !== 0) requiresRotation = true;
+            }
+
+        } else if (action === 'WICKET') {
+            striker.ballsFaced += 1;
+            bowler.wickets += 1;
+            match.liveScore.wickets += 1;
+            ballString = 'W';
+
+            if (newBatterId) {
+                if (outPlayerId === settings.strikerId) {
+                    settings.strikerId = newBatterId;
+                } else if (outPlayerId === settings.nonStrikerId) {
+                    settings.nonStrikerId = newBatterId;
+                }
+            } else {
+                return res.status(400).json({ message: 'newBatterId required for WICKET action' });
+            }
+        }
+
+        if (ballString) settings.currentOverBalls.push(ballString);
+        match.liveScore.lastEvent = ballString;
+
+        if (isLegalBall) {
+            match.liveScore.balls += 1;
+            if (match.liveScore.balls === 6) {
+                match.liveScore.overs += 1;
+                match.liveScore.balls = 0;
+            }
+
+            bowler.bowledBalls += 1;
+            if (bowler.bowledBalls === 6) {
+                bowler.overs += 1;
+                bowler.bowledBalls = 0;
+            }
+        }
+
+        if (requiresRotation) {
+            const temp = settings.strikerId;
+            settings.strikerId = settings.nonStrikerId;
+            settings.nonStrikerId = temp;
+        }
+
+        const legalBallsInOver = settings.currentOverBalls.filter(b => !b.toLowerCase().includes('wd') && !b.toLowerCase().includes('nb')).length;
+
+        let overJustCompleted = false;
+        if (legalBallsInOver === 6) {
+            overJustCompleted = true;
+            settings.currentOverBalls = [];
+
+            const temp = settings.strikerId;
+            settings.strikerId = settings.nonStrikerId;
+            settings.nonStrikerId = temp;
+
+            if (newBowlerId) {
+                settings.bowlerId = newBowlerId;
+            }
+        }
+
+        // Recalculate fantasy points
+        match.playerStats.forEach(p => {
+            const ptsRuns = p.runs || 0;
+            const ptsFours = p.fours * 1;
+            const ptsSixes = p.sixes * 2;
+            const ptsWickets = (p.wickets || 0) * 25;
+            const ptsCatches = (p.catches || 0) * 8;
+            const ptsStumpings = (p.stumpings || 0) * 12;
+
+            p.fantasyPoints = ptsRuns + ptsFours + ptsSixes + ptsWickets + ptsCatches + ptsStumpings;
+        });
+
+        await match.save();
+
+        // Update user teams
+        const pointsMap = {};
+        match.playerStats.forEach(p => { pointsMap[p.playerId] = p.fantasyPoints; });
+
+        const teams = await Team.find({ matchId });
+        const bulkOps = teams.map(team => {
+            let totalTeamPoints = 0;
+            team.players.forEach(pid => {
+                let pts = pointsMap[pid] || 0;
+                if (pid === team.captainId) pts *= 2;
+                else if (pid === team.viceCaptainId) pts *= 1.5;
+                totalTeamPoints += pts;
+            });
+            return {
+                updateOne: {
+                    filter: { _id: team._id },
+                    update: { $set: { totalPoints: totalTeamPoints } }
+                }
+            };
+        });
+
+        if (bulkOps.length > 0) await Team.bulkWrite(bulkOps);
+
+        const io = req.app.get('io');
+        if (io) {
+            io.emit('scoreUpdate', match.liveScore);
+            io.emit('statsUpdate', {
+                matchId,
+                overCompleted: overJustCompleted
+            });
+        }
+
+        res.json({ message: 'Ball processed successfully', overCompleted: overJustCompleted, match });
+
+    } catch (err) {
+        console.error("Process ball error:", err);
+        res.status(500).json({ message: 'Server error processing ball' });
     }
 });
 

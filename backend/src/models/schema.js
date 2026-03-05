@@ -37,12 +37,31 @@ const matchSchema = new Schema({
     battingTeam: { type: String },
     lastEvent: { type: String } // e.g., "4 runs by Sanskar"
   },
+  liveSettings: {
+    strikerId: String,
+    nonStrikerId: String,
+    bowlerId: String,
+    currentOverBalls: [String],
+    battingTeamId: String,
+    bowlingTeamId: String
+  },
   playerStats: [{
     playerId: String,
+    // Batting stats
     runs: { type: Number, default: 0 },
+    ballsFaced: { type: Number, default: 0 },
+    fours: { type: Number, default: 0 },
+    sixes: { type: Number, default: 0 },
+    // Bowling stats
+    overs: { type: Number, default: 0 }, // whole overs
+    bowledBalls: { type: Number, default: 0 }, // partial over balls (0-5)
+    runsConceded: { type: Number, default: 0 },
     wickets: { type: Number, default: 0 },
+    maidens: { type: Number, default: 0 },
+    // Fielding
     catches: { type: Number, default: 0 },
     stumpings: { type: Number, default: 0 },
+    // Calculation
     fantasyPoints: { type: Number, default: 0 }
   }]
 });

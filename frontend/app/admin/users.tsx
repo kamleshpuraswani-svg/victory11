@@ -218,8 +218,8 @@ export default function AdminUsersScreen() {
                         <TouchableOpacity
                             style={[styles.liveScoreBtn, { flex: 1, marginRight: 5 }]}
                             onPress={() => router.push({
-                                pathname: '/admin/match-score',
-                                params: { matchId: item.id, teamA: item.teams[0], teamB: item.teams[1] }
+                                pathname: '/admin/live-match-keypad',
+                                params: { matchId: item.id }
                             })}
                         >
                             <Text style={styles.liveScoreBtnText}>⚡ LIVE SCORE</Text>
