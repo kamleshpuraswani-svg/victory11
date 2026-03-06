@@ -259,8 +259,16 @@ router.post('/matches/:matchId/process-ball', authenticateAdmin, async (req, res
         if (!match) return res.status(404).json({ message: 'Match not found' });
 
         const settings = match.liveSettings;
-        if (!settings || !settings.strikerId || !settings.bowlerId) {
-            return res.status(400).json({ message: 'Innings not started or missing players setup' });
+        if (!settings || !settings.strikerId) {
+            return res.status(400).json({ message: 'Innings not started - no striker set' });
+        }
+        // If bowlerId is missing (due to earlier save failures), allow it to be passed in payload
+        if (!settings.bowlerId) {
+            if (req.body.bowlerId) {
+                settings.bowlerId = req.body.bowlerId;
+            } else {
+                return res.status(400).json({ message: 'Bowler not set. Please use Change Bowler first.' });
+            }
         }
 
         // SNAPSHOT STATE FOR UNDO
