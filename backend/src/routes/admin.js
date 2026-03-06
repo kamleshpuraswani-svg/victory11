@@ -405,20 +405,22 @@ router.post('/matches/:matchId/process-ball', authenticateAdmin, async (req, res
             settings.nonStrikerId = temp;
         }
 
-        const legalBallsInOver = settings.currentOverBalls.filter(b => !b.toLowerCase().includes('wd') && !b.toLowerCase().includes('nb')).length;
+        // Count AFTER ball is pushed so we detect the 6th ball correctly
+        const filterNonLegal = b => !b.toLowerCase().includes('wd') && !b.toLowerCase().includes('nb');
+        const legalBallsInOver = settings.currentOverBalls.filter(filterNonLegal).length;
 
         let overJustCompleted = false;
         if (legalBallsInOver === 6) {
             overJustCompleted = true;
             settings.currentOverBalls = [];
 
-            const temp = settings.strikerId;
+            // Rotate strike at end of over
+            const temp2 = settings.strikerId;
             settings.strikerId = settings.nonStrikerId;
-            settings.nonStrikerId = temp;
+            settings.nonStrikerId = temp2;
 
-            if (newBowlerId) {
-                settings.bowlerId = newBowlerId;
-            }
+            // Mark as awaiting bowler selection
+            settings.awaitingNewBowler = true;
         }
 
         // Recalculate fantasy points
@@ -559,6 +561,37 @@ router.post('/matches/:matchId/swap-strike', authenticateAdmin, async (req, res)
     } catch (err) {
         console.error("Swap strike error:", err);
         res.status(500).json({ message: 'Server error swapping strike' });
+    }
+});
+
+// 5. Change Bowler (after over completes)
+router.post('/matches/:matchId/change-bowler', authenticateAdmin, async (req, res) => {
+    try {
+        const { matchId } = req.params;
+        const { bowlerId } = req.body;
+        if (!bowlerId) return res.status(400).json({ message: 'bowlerId is required' });
+
+        const match = await Match.findOne({ customId: matchId });
+        if (!match) return res.status(404).json({ message: 'Match not found' });
+
+        // Only update the bowler, preserve everything else
+        match.liveSettings.bowlerId = bowlerId;
+        match.liveSettings.awaitingNewBowler = false;
+
+        // Make sure this bowler has a playerStat entry
+        if (!match.playerStats.find(ps => ps.playerId === bowlerId)) {
+            match.playerStats.push({ playerId: bowlerId });
+        }
+
+        await match.save();
+
+        const io = req.app.get('io');
+        if (io) io.emit('statsUpdate', { matchId });
+
+        res.json({ message: 'Bowler changed successfully', match });
+    } catch (err) {
+        console.error("Change bowler error:", err);
+        res.status(500).json({ message: 'Server error changing bowler' });
     }
 });
 

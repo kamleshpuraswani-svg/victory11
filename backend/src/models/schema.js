@@ -44,7 +44,8 @@ const matchSchema = new Schema({
     currentOverBalls: [String],
     battingTeamId: String,
     bowlingTeamId: String,
-    lastBallState: { type: Schema.Types.Mixed }
+    lastBallState: { type: Schema.Types.Mixed },
+    awaitingNewBowler: { type: Boolean, default: false }
   },
   playerStats: [{
     playerId: String,

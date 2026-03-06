@@ -31,7 +31,8 @@ export default function LiveMatchKeypadScreen() {
         outPlayerId?: string;
         runsCompleted?: number;
     } | null>(null);
-    const [selectingNewBowler, setSelectingNewBowler] = useState(false);
+    // NO local selectingNewBowler state! It is derived from match.liveSettings.awaitingNewBowler
+    // so it survives navigation and page refreshes.
     const [selectingExtra, setSelectingExtra] = useState<string | null>(null); // 'WD', 'NB', 'LB', 'B'
 
     useEffect(() => {
@@ -105,12 +106,11 @@ export default function LiveMatchKeypadScreen() {
 
             setMatch(res.data.match);
 
-            if (res.data.overCompleted) {
-                setSelectingNewBowler(true);
-            }
             if (wicketSequence) {
                 setWicketSequence(null);
             }
+            // awaitingNewBowler is derived from match.liveSettings.awaitingNewBowler
+            // so no local state to set here
 
         } catch (error: any) {
             console.error("Process ball err:", error);
@@ -140,7 +140,6 @@ export default function LiveMatchKeypadScreen() {
                         const token = await getAuthToken();
                         const res = await axios.post(`${API_URL}/admin/matches/${matchId}/undo-ball`, {}, { headers: { Authorization: `Bearer ${token}` } });
                         setMatch(res.data.match);
-                        setSelectingNewBowler(false);
                         setWicketSequence(null);
                     } catch (err: any) {
                         Alert.alert("Error", err.response?.data?.message || "Could not undo ball");
@@ -444,45 +443,45 @@ export default function LiveMatchKeypadScreen() {
         }
     }
 
-    if (selectingNewBowler) {
+    if (liveSettings?.awaitingNewBowler) {
+        const changeBowler = async (bowlerId: string) => {
+            try {
+                setProcessing(true);
+                const token = await getAuthToken();
+                const res = await axios.post(
+                    `${API_URL}/admin/matches/${matchId}/change-bowler`,
+                    { bowlerId },
+                    { headers: { Authorization: `Bearer ${token}` } }
+                );
+                setMatch(res.data.match);
+            } catch (err: any) {
+                Alert.alert('Error', err.response?.data?.message || 'Could not set new bowler');
+            } finally {
+                setProcessing(false);
+            }
+        };
         return (
             <View style={styles.container}>
-                <Stack.Screen options={{ title: 'Select Next Bowler' }} />
+                <Stack.Screen options={{ title: 'Over Completed!', headerStyle: { backgroundColor: '#1e293b' }, headerTintColor: '#fbbf24' }} />
                 <Text style={styles.selectPrompt}>Over completed. Who is bowling next?</Text>
                 <ScrollView>
                     {players.filter(p => p.team === liveSettings.bowlingTeamId && p.playerId !== liveSettings.bowlerId).map(p => (
                         <TouchableOpacity
                             key={p.playerId}
                             style={styles.listCard}
-                            onPress={() => {
-                                // Since over is already processed, we just update the match setting locally and save
-                                setProcessing(true);
-                                getAuthToken().then(token => {
-                                    axios.post(`${API_URL}/admin/matches/${matchId}/start-innings`, {
-                                        battingTeamId: liveSettings.battingTeamId,
-                                        bowlingTeamId: liveSettings.bowlingTeamId,
-                                        strikerId: liveSettings.strikerId,
-                                        nonStrikerId: liveSettings.nonStrikerId,
-                                        bowlerId: p.playerId // set the new bowler
-                                    }, { headers: { Authorization: `Bearer ${token}` } }).then(res => {
-                                        setMatch(res.data.match);
-                                        setSelectingNewBowler(false);
-                                        setProcessing(false);
-                                    })
-                                });
-                            }}
+                            onPress={() => changeBowler(p.playerId)}
                         >
                             <Text style={styles.listCardName}>{p.name}</Text>
                         </TouchableOpacity>
                     ))}
                 </ScrollView>
-                {/* Allow undoing the last ball (e.g., if the 6th ball was wrong) */}
                 <TouchableOpacity style={[styles.cancelModalBtn, { backgroundColor: '#fef3c7' }]} onPress={handleUndo}>
-                    <Text style={[styles.cancelModalBtnText, { color: '#b45309' }]}>↩ UNDO LAST BALL INSTEAD</Text>
+                    <Text style={[styles.cancelModalBtnText, { color: '#b45309' }]}>UNDO LAST BALL INSTEAD</Text>
                 </TouchableOpacity>
             </View>
         );
     }
+
 
     if (selectingExtra) {
         return (
