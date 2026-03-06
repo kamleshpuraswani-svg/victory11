@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ActivityIndicator, Alert, ScrollView, TextInput } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import axios from 'axios';
 import { API_URL } from '../../constants/Config';
@@ -16,16 +16,34 @@ export default function LiveMatchKeypadScreen() {
 
     // Initial setup state if innings not started
     const [setupMode, setSetupMode] = useState(false);
+    const [setupStep, setSetupStep] = useState<1 | 2 | 3>(1); // 1=Config, 2=Toss, 3=Players
+
+    // Step 1 - Match Config
+    const [matchType, setMatchType] = useState<'LIMITED_OVERS' | 'BOX_TURF' | 'PAIR' | 'TEST' | 'HUNDRED'>('LIMITED_OVERS');
+    const [totalOvers, setTotalOvers] = useState('20');
+    const [oversPerBowler, setOversPerBowler] = useState('4');
+    const [city, setCity] = useState('');
+    const [ground, setGround] = useState('');
+    const [ballType, setBallType] = useState<'TENNIS' | 'LEATHER' | 'OTHER'>('LEATHER');
+    const [pitchType, setPitchType] = useState<'ROUGH' | 'CEMENT' | 'TURF' | 'ASTROTURF' | 'MATTING'>('TURF');
+    const [wagonWheel, setWagonWheel] = useState(true);
+    const [wideRuns, setWideRuns] = useState(1);
+    const [noBallRuns, setNoBallRuns] = useState(1);
+    const [wideAsLegal, setWideAsLegal] = useState(false);
+    const [noBallAsLegal, setNoBallAsLegal] = useState(false);
+    const [powerPlay1End, setPowerPlay1End] = useState(6);
+    const [showMatchRules, setShowMatchRules] = useState(false);
+
+    // Step 2 - Toss
+    const [tossWinner, setTossWinner] = useState<string | null>(null);
+    const [tossChoice, setTossChoice] = useState<'BAT' | 'BOWL'>('BAT');
+
+    // Step 3 - Players
     const [selectedBattingTeam, setSelectedBattingTeam] = useState<string | null>(null);
     const [selectedStriker, setSelectedStriker] = useState<string | null>(null);
     const [selectedNonStriker, setSelectedNonStriker] = useState<string | null>(null);
     const [selectedBowler, setSelectedBowler] = useState<string | null>(null);
 
-    // Match configuration state
-    const [totalOvers, setTotalOvers] = useState('20');
-    const [powerplayOvers, setPowerplayOvers] = useState('6');
-    const [tossWinner, setTossWinner] = useState<string | null>(null);
-    const [tossChoice, setTossChoice] = useState<'BAT' | 'BOWL'>('BAT');
 
     // Modals state for mid-innings (Wicket or Over End)
     const [wicketSequence, setWicketSequence] = useState<{
@@ -71,7 +89,7 @@ export default function LiveMatchKeypadScreen() {
 
     const handleStartInnings = async () => {
         if (!selectedBattingTeam || !selectedStriker || !selectedNonStriker || !selectedBowler) {
-            Alert.alert("Incomplete", "Please select batting team, striker, non-striker, and opening bowler.");
+            Alert.alert('Incomplete', 'Please select batting team, striker, non-striker, and opening bowler.');
             return;
         }
         const bowlingTeam = match.teams.find((t: string) => t !== selectedBattingTeam);
@@ -86,8 +104,14 @@ export default function LiveMatchKeypadScreen() {
                     strikerId: selectedStriker,
                     nonStrikerId: selectedNonStriker,
                     bowlerId: selectedBowler,
+                    // Full match config
+                    matchType,
                     totalOvers: Number(totalOvers) || 20,
-                    powerplayOvers: Number(powerplayOvers) || 6,
+                    oversPerBowler: Number(oversPerBowler) || 4,
+                    city, ground,
+                    ballType, pitchType,
+                    wagonWheel, wideRuns, noBallRuns, wideAsLegal, noBallAsLegal,
+                    powerPlay1End,
                     tossWinner: tossWinner || '',
                     tossChoice
                 },
@@ -96,8 +120,8 @@ export default function LiveMatchKeypadScreen() {
             setMatch(res.data.match);
             setSetupMode(false);
         } catch (error) {
-            console.error("Start innings API err:", error);
-            Alert.alert("Error", "Failed to start innings");
+            console.error('Start innings API err:', error);
+            Alert.alert('Error', 'Failed to start innings');
         } finally {
             setProcessing(false);
         }
@@ -230,143 +254,336 @@ export default function LiveMatchKeypadScreen() {
         );
     }
 
-    // SETUP VIEW
+    // SETUP VIEW - 3 Step CricHeroes-style
     if (setupMode) {
-        return (
-            <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-                <Stack.Screen options={{ title: 'Match Setup', headerStyle: { backgroundColor: '#1e293b' }, headerTintColor: '#fff' }} />
 
-                {/* ─── MATCH CONFIGURATION ─── */}
-                <Text style={[styles.sectionTitle, { color: '#fbbf24' }]}>⚙️ Match Configuration</Text>
+        // --- MATCH RULES MODAL ---
+        if (showMatchRules) {
+            return (
+                <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+                    <Stack.Screen options={{
+                        title: 'Match Rules (wd, nb)', headerStyle: { backgroundColor: '#00897b' }, headerTintColor: '#fff',
+                        headerLeft: () => <TouchableOpacity onPress={() => setShowMatchRules(false)} style={{ paddingHorizontal: 14 }}><Text style={{ color: '#fff', fontSize: 16 }}>← Back</Text></TouchableOpacity>
+                    }} />
 
-                <Text style={styles.sectionTitle}>Total Overs Per Side</Text>
-                <View style={styles.row}>
-                    {['5', '10', '15', '20', '25', '50'].map(o => (
-                        <TouchableOpacity
-                            key={o}
-                            style={[styles.chip, totalOvers === o && styles.chipActive]}
-                            onPress={() => setTotalOvers(o)}
-                        >
-                            <Text style={[styles.chipText, totalOvers === o && styles.chipTextActive]}>{o}</Text>
+                    <Text style={[styles.sectionTitle, { color: '#fbbf24' }]}>Wagon wheel</Text>
+                    <View style={setupStyles.ruleRow}>
+                        <Text style={setupStyles.ruleLabel}>Show wagon wheel for 1s, 2s, &amp; 3s</Text>
+                        <TouchableOpacity onPress={() => setWagonWheel(v => !v)} style={[setupStyles.toggle, wagonWheel && setupStyles.toggleOn]}>
+                            <View style={[setupStyles.toggleThumb, wagonWheel && setupStyles.toggleThumbOn]} />
                         </TouchableOpacity>
-                    ))}
-                </View>
+                    </View>
 
-                <Text style={styles.sectionTitle}>Powerplay Overs</Text>
-                <View style={styles.row}>
-                    {['0', '3', '6', '10'].map(o => (
-                        <TouchableOpacity
-                            key={o}
-                            style={[styles.chip, powerplayOvers === o && styles.chipActive]}
-                            onPress={() => setPowerplayOvers(o)}
-                        >
-                            <Text style={[styles.chipText, powerplayOvers === o && styles.chipTextActive]}>{o}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
+                    <Text style={[styles.sectionTitle, { color: '#fbbf24', marginTop: 20 }]}>Wide / No Ball Rules</Text>
 
-                <Text style={styles.sectionTitle}>Toss Won By</Text>
-                <View style={styles.row}>
-                    {match.teams.map((t: string) => (
-                        <TouchableOpacity
-                            key={t}
-                            style={[styles.chip, tossWinner === t && styles.chipActive]}
-                            onPress={() => setTossWinner(t)}
-                        >
-                            <Text style={[styles.chipText, tossWinner === t && styles.chipTextActive]}>{t}</Text>
-                        </TouchableOpacity>
-                    ))}
-                </View>
-
-                {tossWinner && (
-                    <>
-                        <Text style={styles.sectionTitle}>{tossWinner} Chose To</Text>
-                        <View style={styles.row}>
-                            {[
-                                { label: '🏏 Bat First', value: 'BAT' },
-                                { label: '🎳 Bowl First', value: 'BOWL' }
-                            ].map(c => (
-                                <TouchableOpacity
-                                    key={c.value}
-                                    style={[styles.chip, tossChoice === c.value && styles.chipActive]}
-                                    onPress={() => setTossChoice(c.value as 'BAT' | 'BOWL')}
-                                >
-                                    <Text style={[styles.chipText, tossChoice === c.value && styles.chipTextActive]}>{c.label}</Text>
-                                </TouchableOpacity>
-                            ))}
+                    <View style={setupStyles.ruleCard}>
+                        <View style={setupStyles.ruleRow}>
+                            <View style={setupStyles.ruleCircle}><Text style={setupStyles.ruleCircleText}>A</Text></View>
+                            <Text style={[setupStyles.ruleLabel, { flex: 1 }]}>Count wide as a legal delivery</Text>
+                            <TouchableOpacity onPress={() => setWideAsLegal(v => !v)} style={[setupStyles.toggle, wideAsLegal && setupStyles.toggleOn]}>
+                                <View style={[setupStyles.toggleThumb, wideAsLegal && setupStyles.toggleThumbOn]} />
+                            </TouchableOpacity>
                         </View>
-                    </>
-                )}
 
-                {/* ─── PLAYER SELECTION ─── */}
-                <Text style={[styles.sectionTitle, { color: '#fbbf24', marginTop: 24 }]}>🏏 Players</Text>
+                        <View style={setupStyles.ruleRow}>
+                            <View style={setupStyles.ruleCircle}><Text style={setupStyles.ruleCircleText}>B</Text></View>
+                            <Text style={[setupStyles.ruleLabel, { flex: 1 }]}>Wide runs</Text>
+                            <View style={setupStyles.counter}>
+                                <TouchableOpacity onPress={() => setWideRuns(v => Math.max(1, v - 1))} style={setupStyles.counterBtn}><Text style={setupStyles.counterBtnText}>−</Text></TouchableOpacity>
+                                <Text style={setupStyles.counterValue}>{wideRuns}</Text>
+                                <TouchableOpacity onPress={() => setWideRuns(v => v + 1)} style={setupStyles.counterBtn}><Text style={setupStyles.counterBtnText}>+</Text></TouchableOpacity>
+                            </View>
+                        </View>
 
-                <Text style={styles.sectionTitle}>Select Batting Team</Text>
+                        <View style={setupStyles.ruleRow}>
+                            <View style={setupStyles.ruleCircle}><Text style={setupStyles.ruleCircleText}>C</Text></View>
+                            <Text style={[setupStyles.ruleLabel, { flex: 1 }]}>Count no ball as a legal delivery</Text>
+                            <TouchableOpacity onPress={() => setNoBallAsLegal(v => !v)} style={[setupStyles.toggle, noBallAsLegal && setupStyles.toggleOn]}>
+                                <View style={[setupStyles.toggleThumb, noBallAsLegal && setupStyles.toggleThumbOn]} />
+                            </TouchableOpacity>
+                        </View>
+
+                        <View style={setupStyles.ruleRow}>
+                            <View style={setupStyles.ruleCircle}><Text style={setupStyles.ruleCircleText}>D</Text></View>
+                            <Text style={[setupStyles.ruleLabel, { flex: 1 }]}>No ball runs</Text>
+                            <View style={setupStyles.counter}>
+                                <TouchableOpacity onPress={() => setNoBallRuns(v => Math.max(1, v - 1))} style={setupStyles.counterBtn}><Text style={setupStyles.counterBtnText}>−</Text></TouchableOpacity>
+                                <Text style={setupStyles.counterValue}>{noBallRuns}</Text>
+                                <TouchableOpacity onPress={() => setNoBallRuns(v => v + 1)} style={setupStyles.counterBtn}><Text style={setupStyles.counterBtnText}>+</Text></TouchableOpacity>
+                            </View>
+                        </View>
+                    </View>
+
+                    <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: '#00897b', marginTop: 24 }]} onPress={() => setShowMatchRules(false)}>
+                        <Text style={styles.primaryBtnText}>Done</Text>
+                    </TouchableOpacity>
+                </ScrollView>
+            );
+        }
+
+        // --- STEP 1 : MATCH CONFIGURATION ---
+        if (setupStep === 1) {
+            return (
+                <ScrollView style={styles.container} contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 }]}>
+                    <Stack.Screen options={{ title: 'Start a Match', headerStyle: { backgroundColor: '#00897b' }, headerTintColor: '#fff' }} />
+
+                    {/* Teams header */}
+                    <View style={setupStyles.teamsHeader}>
+                        <View style={setupStyles.teamBlock}>
+                            <View style={setupStyles.teamAvatar}><Text style={setupStyles.teamAvatarText}>{match.teams[0]?.charAt(0)}</Text></View>
+                            <Text style={setupStyles.teamHeaderName} numberOfLines={1}>{match.teams[0]}</Text>
+                        </View>
+                        <Text style={setupStyles.vsText}>vs</Text>
+                        <View style={setupStyles.teamBlock}>
+                            <View style={setupStyles.teamAvatar}><Text style={setupStyles.teamAvatarText}>{match.teams[1]?.charAt(0)}</Text></View>
+                            <Text style={setupStyles.teamHeaderName} numberOfLines={1}>{match.teams[1]}</Text>
+                        </View>
+                    </View>
+
+                    {/* Match type */}
+                    <Text style={setupStyles.label}>Match type <Text style={{ color: '#ef4444' }}>*</Text></Text>
+                    <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: 16 }}>
+                        {[
+                            { key: 'LIMITED_OVERS', label: 'Limited Overs' },
+                            { key: 'BOX_TURF', label: 'Box/Turf Cricket' },
+                            { key: 'PAIR', label: 'Pair Cricket' },
+                            { key: 'TEST', label: 'Test Match' },
+                            { key: 'HUNDRED', label: 'The Hundred' }
+                        ].map(t => (
+                            <TouchableOpacity key={t.key} style={[setupStyles.typeChip, matchType === t.key && setupStyles.typeChipActive]}
+                                onPress={() => setMatchType(t.key as any)}>
+                                <Text style={[setupStyles.typeChipText, matchType === t.key && setupStyles.typeChipTextActive]}>{t.label}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </ScrollView>
+
+                    {/* Overs row */}
+                    <View style={setupStyles.inputRow}>
+                        <View style={{ flex: 1, marginRight: 12 }}>
+                            <Text style={setupStyles.label}>No. of overs <Text style={{ color: '#ef4444' }}>*</Text></Text>
+                            <TextInput
+                                style={setupStyles.input}
+                                value={totalOvers}
+                                onChangeText={setTotalOvers}
+                                keyboardType="number-pad"
+                                placeholder="e.g. 20"
+                                placeholderTextColor="#9ca3af"
+                            />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={setupStyles.label}>Overs per bowler</Text>
+                            <TextInput
+                                style={setupStyles.input}
+                                value={oversPerBowler}
+                                onChangeText={setOversPerBowler}
+                                keyboardType="number-pad"
+                                placeholder="e.g. 4"
+                                placeholderTextColor="#9ca3af"
+                            />
+                        </View>
+                    </View>
+
+                    {/* Power Play */}
+                    <TouchableOpacity style={setupStyles.ppRow}>
+                        <Text style={[setupStyles.label, { color: '#00897b', fontWeight: '700' }]}>Power play  {'>'}</Text>
+                        <Text style={setupStyles.ppSub}>First {powerPlay1End} overs</Text>
+                    </TouchableOpacity>
+
+                    {/* City */}
+                    <Text style={setupStyles.label}>City / town <Text style={{ color: '#ef4444' }}>*</Text></Text>
+                    <TextInput style={setupStyles.input} value={city} onChangeText={setCity} placeholder="e.g. Mumbai" placeholderTextColor="#9ca3af" />
+
+                    {/* Ground */}
+                    <Text style={setupStyles.label}>Ground <Text style={{ color: '#ef4444' }}>*</Text></Text>
+                    <TextInput style={setupStyles.input} value={ground} onChangeText={setGround} placeholder="e.g. Wankhede Stadium" placeholderTextColor="#9ca3af" />
+
+                    {/* Ball type */}
+                    <Text style={setupStyles.label}>Ball type <Text style={{ color: '#ef4444' }}>*</Text></Text>
+                    <View style={setupStyles.ballRow}>
+                        {[
+                            { key: 'TENNIS', label: 'Tennis', color: '#84cc16', emoji: '🎾' },
+                            { key: 'LEATHER', label: 'Leather', color: '#dc2626', emoji: '🏏' },
+                            { key: 'OTHER', label: 'Other', color: '#f59e0b', emoji: '🔵' }
+                        ].map(b => (
+                            <TouchableOpacity key={b.key} style={[setupStyles.ballBtn, ballType === b.key && { borderColor: '#00897b', borderWidth: 2 }]}
+                                onPress={() => setBallType(b.key as any)}>
+                                <Text style={{ fontSize: 36 }}>{b.emoji}</Text>
+                                <Text style={[setupStyles.ballLabel, ballType === b.key && { color: '#00897b', fontWeight: '700' }]}>{b.label}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
+                    {/* Wagon wheel toggle */}
+                    <View style={[setupStyles.ruleRow, { marginVertical: 8 }]}>
+                        <View>
+                            <Text style={setupStyles.sectionHead}>Wagon wheel</Text>
+                            <Text style={setupStyles.ruleLabel}>Show wagon wheel for 1s, 2s, &amp; 3s</Text>
+                        </View>
+                        <TouchableOpacity onPress={() => setWagonWheel(v => !v)} style={[setupStyles.toggle, wagonWheel && setupStyles.toggleOn]}>
+                            <View style={[setupStyles.toggleThumb, wagonWheel && setupStyles.toggleThumbOn]} />
+                        </TouchableOpacity>
+                    </View>
+
+                    {/* Pitch type */}
+                    <Text style={setupStyles.sectionHead}>Pitch type</Text>
+                    <View style={[styles.row, { flexWrap: 'wrap', gap: 8 }]}>
+                        {(['ROUGH', 'CEMENT', 'TURF', 'ASTROTURF', 'MATTING'] as const).map(p => (
+                            <TouchableOpacity key={p} style={[setupStyles.pitchChip, pitchType === p && setupStyles.pitchChipActive]}
+                                onPress={() => setPitchType(p)}>
+                                <Text style={[setupStyles.pitchChipText, pitchType === p && { color: '#1e293b', fontWeight: '700' }]}>{p}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
+                    {/* Match officials */}
+                    <Text style={[setupStyles.sectionHead, { marginTop: 20 }]}>Match officials</Text>
+                    <View style={setupStyles.ballRow}>
+                        {[
+                            { label: 'Umpires', emoji: '🎩' },
+                            { label: 'Scorers', emoji: '📋' },
+                            { label: 'Live streamer', emoji: '📷' },
+                            { label: 'Others', emoji: '👤' }
+                        ].map(o => (
+                            <View key={o.label} style={setupStyles.officialBtn}>
+                                <View style={setupStyles.officialCircle}><Text style={{ fontSize: 22 }}>{o.emoji}</Text></View>
+                                <Text style={setupStyles.ballLabel}>{o.label}</Text>
+                            </View>
+                        ))}
+                    </View>
+
+                    {/* Match rules link */}
+                    <TouchableOpacity style={setupStyles.rulesLink} onPress={() => setShowMatchRules(true)}>
+                        <Text style={{ fontSize: 18 }}>⚙️</Text>
+                        <Text style={[setupStyles.ruleLabel, { color: '#00897b', fontWeight: '700', marginLeft: 8 }]}>Match rules</Text>
+                        <Text style={{ color: '#9ca3af', marginLeft: 'auto' }}>{'>'}</Text>
+                    </TouchableOpacity>
+
+                    {/* Bottom buttons */}
+                    <View style={setupStyles.bottomBtns}>
+                        <TouchableOpacity style={setupStyles.scheduleBtnGrey}>
+                            <Text style={setupStyles.scheduleBtnText}>Schedule match</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={setupStyles.nextBtn} onPress={() => setSetupStep(2)}>
+                            <Text style={setupStyles.nextBtnText}>Next (toss)</Text>
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+            );
+        }
+
+        // --- STEP 2 : TOSS ---
+        if (setupStep === 2) {
+            return (
+                <ScrollView style={styles.container} contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 }]}>
+                    <Stack.Screen options={{
+                        title: 'Toss', headerStyle: { backgroundColor: '#00897b' }, headerTintColor: '#fff',
+                        headerLeft: () => <TouchableOpacity onPress={() => setSetupStep(1)} style={{ paddingHorizontal: 14 }}><Text style={{ color: '#fff', fontSize: 16 }}>← Back</Text></TouchableOpacity>
+                    }} />
+
+                    <Text style={[setupStyles.sectionHead, { marginTop: 24, fontSize: 20, textAlign: 'center', color: '#fbbf24' }]}>🪙 Toss</Text>
+
+                    <Text style={setupStyles.label}>Who won the toss?</Text>
+                    <View style={[styles.row, { marginBottom: 16 }]}>
+                        {match.teams.map((t: string) => (
+                            <TouchableOpacity key={t} style={[setupStyles.typeChip, tossWinner === t && setupStyles.typeChipActive]}
+                                onPress={() => { setTossWinner(t); setSelectedBattingTeam(null); }}>
+                                <Text style={[setupStyles.typeChipText, tossWinner === t && setupStyles.typeChipTextActive]}>{t}</Text>
+                            </TouchableOpacity>
+                        ))}
+                    </View>
+
+                    {tossWinner && (
+                        <>
+                            <Text style={setupStyles.label}>{tossWinner} elected to</Text>
+                            <View style={styles.row}>
+                                {[{ label: '🏏 Bat first', value: 'BAT' }, { label: '🎳 Bowl first', value: 'BOWL' }].map(c => (
+                                    <TouchableOpacity key={c.value} style={[setupStyles.typeChip, tossChoice === c.value && setupStyles.typeChipActive]}
+                                        onPress={() => { setTossChoice(c.value as 'BAT' | 'BOWL'); setSelectedBattingTeam(tossChoice === 'BAT' ? tossWinner : match.teams.find((t: string) => t !== tossWinner)); }}>
+                                        <Text style={[setupStyles.typeChipText, tossChoice === c.value && setupStyles.typeChipTextActive]}>{c.label}</Text>
+                                    </TouchableOpacity>
+                                ))}
+                            </View>
+                        </>
+                    )}
+
+                    <View style={setupStyles.bottomBtns}>
+                        <TouchableOpacity style={setupStyles.scheduleBtnGrey} onPress={() => setSetupStep(1)}>
+                            <Text style={setupStyles.scheduleBtnText}>Back</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity style={[setupStyles.nextBtn, !tossWinner && { opacity: 0.4 }]}
+                            onPress={() => { if (tossWinner) setSetupStep(3); }}>
+                            <Text style={setupStyles.nextBtnText}>Next (players)</Text>
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+            );
+        }
+
+        // --- STEP 3 : OPENING PLAYERS ---
+        return (
+            <ScrollView style={styles.container} contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 }]}>
+                <Stack.Screen options={{
+                    title: 'Opening Players', headerStyle: { backgroundColor: '#00897b' }, headerTintColor: '#fff',
+                    headerLeft: () => <TouchableOpacity onPress={() => setSetupStep(2)} style={{ paddingHorizontal: 14 }}><Text style={{ color: '#fff', fontSize: 16 }}>← Back</Text></TouchableOpacity>
+                }} />
+
+                <Text style={[setupStyles.sectionHead, { marginTop: 16, color: '#fbbf24' }]}>🏏 Select Batting Team</Text>
                 <View style={styles.row}>
                     {match.teams.map((t: string) => (
-                        <TouchableOpacity
-                            key={t}
-                            style={[styles.chip, selectedBattingTeam === t && styles.chipActive]}
-                            onPress={() => setSelectedBattingTeam(t)}
-                        >
-                            <Text style={[styles.chipText, selectedBattingTeam === t && styles.chipTextActive]}>{t}</Text>
+                        <TouchableOpacity key={t} style={[setupStyles.typeChip, selectedBattingTeam === t && setupStyles.typeChipActive]}
+                            onPress={() => setSelectedBattingTeam(t)}>
+                            <Text style={[setupStyles.typeChipText, selectedBattingTeam === t && setupStyles.typeChipTextActive]}>{t}</Text>
                         </TouchableOpacity>
                     ))}
                 </View>
 
                 {selectedBattingTeam && (
                     <>
-                        <Text style={styles.sectionTitle}>Select Striker</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hScroll}>
-                            {players.filter(p => p.team === selectedBattingTeam).map(p => (
-                                <TouchableOpacity
-                                    key={p.playerId || p.id}
-                                    style={[styles.playerChip, selectedStriker === (p.playerId || p.id) && styles.playerChipActive]}
-                                    onPress={() => setSelectedStriker(p.playerId || p.id)}
-                                >
-                                    <Text style={[styles.playerChipText, selectedStriker === (p.playerId || p.id) && styles.playerChipTextActive]}>{p.name}</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
+                        <Text style={setupStyles.label}>Striker (on strike)</Text>
+                        {players.filter(p => p.team === selectedBattingTeam).map(p => (
+                            <TouchableOpacity key={p.playerId} style={[styles.listCard, selectedStriker === p.playerId && { borderColor: '#00897b', borderWidth: 2 }]}
+                                onPress={() => setSelectedStriker(p.playerId)}>
+                                <Text style={[styles.listCardName, selectedStriker === p.playerId && { color: '#00897b' }]}>{p.name}</Text>
+                                {selectedStriker === p.playerId && <Text style={{ color: '#00897b', fontWeight: '700' }}>✓ ON STRIKE</Text>}
+                            </TouchableOpacity>
+                        ))}
 
-                        <Text style={styles.sectionTitle}>Select Non-Striker</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hScroll}>
-                            {players.filter(p => p.team === selectedBattingTeam && (p.playerId || p.id) !== selectedStriker).map(p => (
-                                <TouchableOpacity
-                                    key={p.playerId || p.id}
-                                    style={[styles.playerChip, selectedNonStriker === (p.playerId || p.id) && styles.playerChipActive]}
-                                    onPress={() => setSelectedNonStriker(p.playerId || p.id)}
-                                >
-                                    <Text style={[styles.playerChipText, selectedNonStriker === (p.playerId || p.id) && styles.playerChipTextActive]}>{p.name}</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
+                        <Text style={[setupStyles.label, { marginTop: 12 }]}>Non-Striker</Text>
+                        {players.filter(p => p.team === selectedBattingTeam && p.playerId !== selectedStriker).map(p => (
+                            <TouchableOpacity key={p.playerId} style={[styles.listCard, selectedNonStriker === p.playerId && { borderColor: '#0284c7', borderWidth: 2 }]}
+                                onPress={() => setSelectedNonStriker(p.playerId)}>
+                                <Text style={[styles.listCardName, selectedNonStriker === p.playerId && { color: '#0284c7' }]}>{p.name}</Text>
+                                {selectedNonStriker === p.playerId && <Text style={{ color: '#0284c7', fontWeight: '700' }}>✓ NON-STRIKER</Text>}
+                            </TouchableOpacity>
+                        ))}
 
-                        <Text style={styles.sectionTitle}>Select Opening Bowler</Text>
-                        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.hScroll}>
-                            {players.filter(p => p.team !== selectedBattingTeam).map(p => (
-                                <TouchableOpacity
-                                    key={p.playerId || p.id}
-                                    style={[styles.playerChip, selectedBowler === (p.playerId || p.id) && styles.playerChipActive]}
-                                    onPress={() => setSelectedBowler(p.playerId || p.id)}
-                                >
-                                    <Text style={[styles.playerChipText, selectedBowler === (p.playerId || p.id) && styles.playerChipTextActive]}>{p.name}</Text>
-                                </TouchableOpacity>
-                            ))}
-                        </ScrollView>
-
-                        <TouchableOpacity
-                            style={[styles.primaryBtn, processing && styles.disabledBtn]}
-                            onPress={handleStartInnings}
-                            disabled={processing}
-                        >
-                            {processing ? <ActivityIndicator color="#fff" /> : <Text style={styles.primaryBtnText}>START INNINGS</Text>}
-                        </TouchableOpacity>
+                        <Text style={[setupStyles.label, { marginTop: 12 }]}>Opening Bowler</Text>
+                        {players.filter(p => p.team !== selectedBattingTeam).map(p => (
+                            <TouchableOpacity key={p.playerId} style={[styles.listCard, selectedBowler === p.playerId && { borderColor: '#dc2626', borderWidth: 2 }]}
+                                onPress={() => setSelectedBowler(p.playerId)}>
+                                <Text style={[styles.listCardName, selectedBowler === p.playerId && { color: '#dc2626' }]}>{p.name}</Text>
+                                {selectedBowler === p.playerId && <Text style={{ color: '#dc2626', fontWeight: '700' }}>✓ OPENING BOWLER</Text>}
+                            </TouchableOpacity>
+                        ))}
                     </>
                 )}
+
+                <View style={setupStyles.bottomBtns}>
+                    <TouchableOpacity style={setupStyles.scheduleBtnGrey} onPress={() => setSetupStep(2)}>
+                        <Text style={setupStyles.scheduleBtnText}>Back</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                        style={[setupStyles.nextBtn, processing && { opacity: 0.5 }]}
+                        onPress={handleStartInnings}
+                        disabled={processing}
+                    >
+                        {processing ? <ActivityIndicator color="#fff" /> : <Text style={setupStyles.nextBtnText}>Start Innings</Text>}
+                    </TouchableOpacity>
+                </View>
             </ScrollView>
         );
     }
+
 
     const { liveScore, liveSettings } = match;
     const strikerStat = getPlayerStat(liveSettings.strikerId);
@@ -804,4 +1021,73 @@ const styles = StyleSheet.create({
     listCardName: { fontSize: 16, fontWeight: '700', color: '#0f172a' },
     cancelModalBtn: { backgroundColor: '#fee2e2', padding: 16, marginHorizontal: 20, marginBottom: 20, marginTop: 10, borderRadius: 10, alignItems: 'center' },
     cancelModalBtnText: { color: '#dc2626', fontSize: 14, fontWeight: '800', letterSpacing: 1 }
+});
+
+const setupStyles = StyleSheet.create({
+    // Teams header
+    teamsHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', backgroundColor: '#00897b', paddingVertical: 20, paddingHorizontal: 16, marginBottom: 16 },
+    teamBlock: { alignItems: 'center', flex: 1 },
+    teamAvatar: { width: 64, height: 64, borderRadius: 32, backgroundColor: '#4db6ac', justifyContent: 'center', alignItems: 'center', marginBottom: 8 },
+    teamAvatarText: { fontSize: 28, fontWeight: '900', color: '#fff' },
+    teamHeaderName: { fontSize: 13, fontWeight: '700', color: '#fff', textAlign: 'center', maxWidth: 120 },
+    vsText: { fontSize: 22, fontWeight: '900', color: '#fff', opacity: 0.8, marginHorizontal: 8 },
+
+    // Form elements
+    label: { fontSize: 14, fontWeight: '700', color: '#374151', marginBottom: 6, marginTop: 12 },
+    sectionHead: { fontSize: 16, fontWeight: '800', color: '#1e293b', marginBottom: 8, marginTop: 4 },
+    input: { borderBottomWidth: 1.5, borderBottomColor: '#d1d5db', paddingVertical: 10, fontSize: 16, color: '#111827', backgroundColor: 'transparent', marginBottom: 4 },
+    inputRow: { flexDirection: 'row', alignItems: 'flex-end' },
+
+    // Match type chips
+    typeChip: { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 20, borderWidth: 1.5, borderColor: '#d1d5db', marginRight: 8, backgroundColor: '#fff' },
+    typeChipActive: { borderColor: '#00897b', backgroundColor: '#00897b' },
+    typeChipText: { fontSize: 14, color: '#374151', fontWeight: '600' },
+    typeChipTextActive: { color: '#fff', fontWeight: '700' },
+
+    // Power play row
+    ppRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingVertical: 10, borderBottomWidth: 1, borderBottomColor: '#e5e7eb', marginBottom: 4 },
+    ppSub: { fontSize: 13, color: '#6b7280' },
+
+    // Ball type
+    ballRow: { flexDirection: 'row', justifyContent: 'space-around', marginVertical: 12 },
+    ballBtn: { alignItems: 'center', padding: 12, borderRadius: 12, borderWidth: 1.5, borderColor: '#e5e7eb', minWidth: 88, backgroundColor: '#fff' },
+    ballLabel: { fontSize: 13, color: '#374151', marginTop: 6, fontWeight: '600' },
+
+    // Pitch chips
+    pitchChip: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20, borderWidth: 1.5, borderColor: '#d1d5db', backgroundColor: '#fff' },
+    pitchChipActive: { borderColor: '#00897b', backgroundColor: '#e6f4f1' },
+    pitchChipText: { fontSize: 13, color: '#374151', fontWeight: '600' },
+
+    // Officials
+    officialBtn: { alignItems: 'center', marginHorizontal: 4 },
+    officialCircle: { width: 60, height: 60, borderRadius: 30, borderWidth: 1.5, borderColor: '#d1d5db', justifyContent: 'center', alignItems: 'center', backgroundColor: '#f9fafb', marginBottom: 6 },
+
+    // Match rules link
+    rulesLink: { flexDirection: 'row', alignItems: 'center', paddingVertical: 14, borderTopWidth: 1, borderTopColor: '#e5e7eb', marginTop: 8 },
+
+    // Rule rows
+    ruleCard: { backgroundColor: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#e5e7eb', padding: 12, marginVertical: 8 },
+    ruleRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
+    ruleLabel: { fontSize: 14, color: '#374151', flex: 1 },
+    ruleCircle: { width: 28, height: 28, borderRadius: 14, borderWidth: 1.5, borderColor: '#d1d5db', justifyContent: 'center', alignItems: 'center', marginRight: 10 },
+    ruleCircleText: { fontSize: 13, fontWeight: '700', color: '#374151' },
+
+    // Toggle switch
+    toggle: { width: 48, height: 26, borderRadius: 13, backgroundColor: '#d1d5db', justifyContent: 'center', padding: 2 },
+    toggleOn: { backgroundColor: '#00897b' },
+    toggleThumb: { width: 22, height: 22, borderRadius: 11, backgroundColor: '#fff', shadowColor: '#000', shadowOpacity: 0.2, shadowRadius: 2, elevation: 2 },
+    toggleThumbOn: { alignSelf: 'flex-end' },
+
+    // Counter
+    counter: { flexDirection: 'row', alignItems: 'center', borderWidth: 1, borderColor: '#d1d5db', borderRadius: 8 },
+    counterBtn: { paddingHorizontal: 14, paddingVertical: 6 },
+    counterBtnText: { fontSize: 20, color: '#374151', fontWeight: '700' },
+    counterValue: { fontSize: 16, fontWeight: '700', paddingHorizontal: 12, color: '#111827' },
+
+    // Bottom buttons
+    bottomBtns: { flexDirection: 'row', gap: 12, marginTop: 24, paddingHorizontal: 0 },
+    scheduleBtnGrey: { flex: 1, paddingVertical: 16, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#d1d5db', backgroundColor: '#f9fafb' },
+    scheduleBtnText: { color: '#6b7280', fontSize: 15, fontWeight: '700' },
+    nextBtn: { flex: 2, backgroundColor: '#00897b', paddingVertical: 16, borderRadius: 8, alignItems: 'center' },
+    nextBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' }
 });

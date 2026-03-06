@@ -38,10 +38,34 @@ const matchSchema = new Schema({
     lastEvent: { type: String } // e.g., "4 runs by Sanskar"
   },
   matchConfig: {
+    // Match basics
+    matchType: { type: String, enum: ['LIMITED_OVERS', 'BOX_TURF', 'PAIR', 'TEST', 'HUNDRED'], default: 'LIMITED_OVERS' },
     totalOvers: { type: Number, default: 20 },
-    tossWinner: { type: String },
-    tossChoice: { type: String, enum: ['BAT', 'BOWL'] },
-    powerplayOvers: { type: Number, default: 6 },
+    oversPerBowler: { type: Number, default: 4 },
+    city: { type: String, default: '' },
+    ground: { type: String, default: '' },
+    matchDateTime: { type: Date },
+    // Ball & pitch
+    ballType: { type: String, enum: ['TENNIS', 'LEATHER', 'OTHER'], default: 'LEATHER' },
+    pitchType: { type: String, enum: ['ROUGH', 'CEMENT', 'TURF', 'ASTROTURF', 'MATTING'], default: 'TURF' },
+    // Power play configuration
+    powerPlay1End: { type: Number, default: 6 },
+    powerPlay2Start: { type: Number },
+    powerPlay2End: { type: Number },
+    powerPlay3Start: { type: Number },
+    powerPlay3End: { type: Number },
+    // Match rules
+    wagonWheel: { type: Boolean, default: true },
+    wideRuns: { type: Number, default: 1 },
+    noBallRuns: { type: Number, default: 1 },
+    wideAsLegal: { type: Boolean, default: false },
+    noBallAsLegal: { type: Boolean, default: false },
+    // Toss
+    tossWinner: { type: String, default: '' },
+    tossChoice: { type: String, enum: ['BAT', 'BOWL'], default: 'BAT' },
+    // Officials
+    umpires: [String],
+    scorers: [String],
     inningsNumber: { type: Number, default: 1 }
   },
   liveSettings: {

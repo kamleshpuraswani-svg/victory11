@@ -202,8 +202,14 @@ router.put('/matches/:matchId/player-stats', authenticateAdmin, async (req, res)
 router.post('/matches/:matchId/start-innings', authenticateAdmin, async (req, res) => {
     try {
         const { matchId } = req.params;
-        const { battingTeamId, bowlingTeamId, strikerId, nonStrikerId, bowlerId,
-            totalOvers, tossWinner, tossChoice, powerplayOvers } = req.body;
+        const {
+            battingTeamId, bowlingTeamId, strikerId, nonStrikerId, bowlerId,
+            // Match Config fields
+            matchType, totalOvers, oversPerBowler, city, ground, matchDateTime,
+            ballType, pitchType, wagonWheel, wideRuns, noBallRuns, wideAsLegal, noBallAsLegal,
+            powerPlay1End, powerPlay2Start, powerPlay2End, powerPlay3Start, powerPlay3End,
+            tossWinner, tossChoice, umpires, scorers
+        } = req.body;
 
         const match = await Match.findOne({ customId: matchId });
         if (!match) return res.status(404).json({ message: 'Match not found' });
@@ -218,17 +224,33 @@ router.post('/matches/:matchId/start-innings', authenticateAdmin, async (req, re
             awaitingNewBowler: false
         };
 
-        // Save optional match configuration
-        if (totalOvers || tossWinner || powerplayOvers) {
-            match.matchConfig = {
-                totalOvers: totalOvers || 20,
-                tossWinner: tossWinner || '',
-                tossChoice: tossChoice || 'BAT',
-                powerplayOvers: powerplayOvers || 6,
-                inningsNumber: 1
-            };
-            match.markModified('matchConfig');
-        }
+        // Save full match configuration
+        match.matchConfig = {
+            matchType: matchType || 'LIMITED_OVERS',
+            totalOvers: Number(totalOvers) || 20,
+            oversPerBowler: Number(oversPerBowler) || Math.ceil((Number(totalOvers) || 20) / 5),
+            city: city || '',
+            ground: ground || '',
+            matchDateTime: matchDateTime ? new Date(matchDateTime) : new Date(),
+            ballType: ballType || 'LEATHER',
+            pitchType: pitchType || 'TURF',
+            wagonWheel: wagonWheel !== false,
+            wideRuns: Number(wideRuns) || 1,
+            noBallRuns: Number(noBallRuns) || 1,
+            wideAsLegal: !!wideAsLegal,
+            noBallAsLegal: !!noBallAsLegal,
+            powerPlay1End: Number(powerPlay1End) || 6,
+            powerPlay2Start: powerPlay2Start ? Number(powerPlay2Start) : undefined,
+            powerPlay2End: powerPlay2End ? Number(powerPlay2End) : undefined,
+            powerPlay3Start: powerPlay3Start ? Number(powerPlay3Start) : undefined,
+            powerPlay3End: powerPlay3End ? Number(powerPlay3End) : undefined,
+            tossWinner: tossWinner || '',
+            tossChoice: tossChoice || 'BAT',
+            umpires: umpires || [],
+            scorers: scorers || [],
+            inningsNumber: 1
+        };
+        match.markModified('matchConfig');
 
         // Ensure playerStats exist for these players
         [strikerId, nonStrikerId, bowlerId].forEach(id => {
