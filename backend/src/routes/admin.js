@@ -11,6 +11,7 @@ const calculateFantasyPoints = (p, role) => {
 
     // Batting
     const runs = p.runs || 0;
+    const ballsFaced = p.ballsFaced || 0;
     pts += runs;
     pts += (p.fours || 0) * 4;
     pts += (p.sixes || 0) * 6;
@@ -21,6 +22,17 @@ const calculateFantasyPoints = (p, role) => {
     else if (runs >= 50) pts += 8;
     else if (runs >= 25) pts += 4;
 
+    // Strike Rate (min 10 balls faced)
+    if (ballsFaced >= 10) {
+        const sr = (runs / ballsFaced) * 100;
+        if (sr > 170) pts += 6;
+        else if (sr >= 150) pts += 4;
+        else if (sr >= 130) pts += 2;
+        else if (sr >= 60 && sr <= 70) pts -= 2;
+        else if (sr >= 50 && sr < 60) pts -= 4;
+        else if (sr < 50) pts -= 6;
+    }
+
     // Duck penalty: -2 if out for 0 (Bowlers are typically exempt)
     if (p.isDismissed && runs === 0 && role !== 'BOWLER') {
         pts -= 2;
@@ -28,10 +40,24 @@ const calculateFantasyPoints = (p, role) => {
 
     // Bowling
     const wickets = p.wickets || 0;
+    const runsConceded = p.runsConceded || 0;
+    const totalBallsBowled = (p.overs || 0) * 6 + (p.bowledBalls || 0);
+
     pts += wickets * 30;
     pts += (p.bowledLbwCount || 0) * 8;
     pts += (p.maidens || 0) * 12;
     pts += (p.dotBalls || 0) * 1;
+
+    // Economy Rate (min 2 overs / 12 balls bowled)
+    if (totalBallsBowled >= 12) {
+        const er = (runsConceded / totalBallsBowled) * 6;
+        if (er < 5) pts += 6;
+        else if (er >= 5 && er < 6) pts += 4;
+        else if (er >= 6 && er <= 7) pts += 2;
+        else if (er >= 9 && er <= 10) pts -= 2;
+        else if (er > 10 && er <= 11) pts -= 4;
+        else if (er > 11) pts -= 6;
+    }
 
     // Wicket Haul Bonuses (non-cumulative)
     if (wickets >= 5) pts += 12;
