@@ -99,6 +99,7 @@ const matchSchema = new Schema({
     indirectRunOuts: { type: Number, default: 0 },
     // Advanced Fantasy Stats
     bowledLbwCount: { type: Number, default: 0 },
+    dotBalls: { type: Number, default: 0 },
     isDismissed: { type: Boolean, default: false },
     // Calculation
     fantasyPoints: { type: Number, default: 0 }

@@ -12,26 +12,29 @@ const calculateFantasyPoints = (p, role) => {
     // Batting
     const runs = p.runs || 0;
     pts += runs;
-    pts += (p.fours || 0) * 1;
-    pts += (p.sixes || 0) * 2;
+    pts += (p.fours || 0) * 4;
+    pts += (p.sixes || 0) * 6;
 
+    // Milestones (non-cumulative)
     if (runs >= 100) pts += 16;
+    else if (runs >= 75) pts += 12;
     else if (runs >= 50) pts += 8;
-    else if (runs >= 30) pts += 4;
+    else if (runs >= 25) pts += 4;
 
-    // Duck penalty: -2 if out for 0 (Bowlers are typically exempt in many systems, 
-    // but here we check role if available. If no role, we apply to everyone)
+    // Duck penalty: -2 if out for 0 (Bowlers are typically exempt)
     if (p.isDismissed && runs === 0 && role !== 'BOWLER') {
         pts -= 2;
     }
 
     // Bowling
     const wickets = p.wickets || 0;
-    pts += wickets * 25;
+    pts += wickets * 30;
     pts += (p.bowledLbwCount || 0) * 8;
     pts += (p.maidens || 0) * 12;
+    pts += (p.dotBalls || 0) * 1;
 
-    if (wickets >= 5) pts += 16;
+    // Wicket Haul Bonuses (non-cumulative)
+    if (wickets >= 5) pts += 12;
     else if (wickets >= 4) pts += 8;
     else if (wickets >= 3) pts += 4;
 
@@ -588,6 +591,9 @@ router.post('/matches/:matchId/process-ball', authenticateAdmin, async (req, res
             }
 
             bowler.bowledBalls += 1;
+            if (bowlerRunsInThisBall === 0) {
+                bowler.dotBalls += 1;
+            }
             if (bowler.bowledBalls === 6) {
                 bowler.overs += 1;
                 bowler.bowledBalls = 0;
