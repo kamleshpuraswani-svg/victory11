@@ -212,8 +212,20 @@ export default function AdminUsersScreen() {
                 </TouchableOpacity>
             </View>
 
-            {(item.status === 'LIVE' || item.status === 'COMPLETED') && (
+            {(item.status === 'UPCOMING' || item.status === 'LIVE' || item.status === 'COMPLETED') && (
                 <View style={styles.actionRowStyles}>
+                    {item.status === 'UPCOMING' && (
+                        <TouchableOpacity
+                            style={[styles.liveScoreBtn, { flex: 1, backgroundColor: '#00897b' }]}
+                            onPress={() => router.push({
+                                pathname: '/admin/live-match-keypad',
+                                params: { matchId: item.id }
+                            })}
+                        >
+                            <Text style={styles.liveScoreBtnText}>▶ START SCORING</Text>
+                        </TouchableOpacity>
+                    )}
+
                     {item.status === 'LIVE' && (
                         <TouchableOpacity
                             style={[styles.liveScoreBtn, { flex: 1, marginRight: 5 }]}
@@ -226,17 +238,20 @@ export default function AdminUsersScreen() {
                         </TouchableOpacity>
                     )}
 
-                    <TouchableOpacity
-                        style={[styles.scorecardBtn, { flex: 1, marginLeft: item.status === 'LIVE' ? 5 : 0 }]}
-                        onPress={() => router.push({
-                            pathname: '/admin/admin-scorecard',
-                            params: { matchId: item.id }
-                        })}
-                    >
-                        <Text style={styles.scorecardBtnText}>📝 PLAYER SCORECARD</Text>
-                    </TouchableOpacity>
+                    {(item.status === 'LIVE' || item.status === 'COMPLETED') && (
+                        <TouchableOpacity
+                            style={[styles.scorecardBtn, { flex: 1, marginLeft: item.status === 'LIVE' ? 5 : 0 }]}
+                            onPress={() => router.push({
+                                pathname: '/admin/admin-scorecard',
+                                params: { matchId: item.id }
+                            })}
+                        >
+                            <Text style={styles.scorecardBtnText}>📝 PLAYER SCORECARD</Text>
+                        </TouchableOpacity>
+                    )}
                 </View>
             )}
+
         </TouchableOpacity>
     );
 
