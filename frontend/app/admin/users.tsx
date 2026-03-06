@@ -97,36 +97,45 @@ export default function AdminUsersScreen() {
     };
 
     const handleResetMatch = async (matchId: string) => {
-        Alert.alert(
-            'Reset Match',
-            'This will clear all scoring data and reset the match to UPCOMING. Are you sure?',
-            [
-                { text: 'Cancel', style: 'cancel' },
-                {
-                    text: 'Reset',
-                    style: 'destructive',
-                    onPress: async () => {
-                        try {
-                            const token = await getAuthToken();
-                            const url = `${API_URL}/admin/matches/${matchId}/reset`;
-                            console.log(`[RESET] Calling URL: ${url}`);
-                            Alert.alert('DEBUG', `Calling: ${url}`);
+        const confirmMsg = "Are you sure you want to reset the scoring, it will reset all the scoring.";
 
-                            const response = await axios.post(url, {}, {
-                                headers: { Authorization: `Bearer ${token}` }
-                            });
+        const performReset = async () => {
+            try {
+                const token = await getAuthToken();
+                await axios.post(`${API_URL}/admin/matches/${matchId}/reset`, {}, {
+                    headers: { Authorization: `Bearer ${token}` }
+                });
 
-                            console.log(`[RESET] Server Response:`, response.data);
-                            Alert.alert('Success', 'Match data has been reset.');
-                            fetchMatches();
-                        } catch (err) {
-                            console.error("Reset match error:", err);
-                            Alert.alert('Error', 'Failed to reset match');
-                        }
-                    }
+                if (Platform.OS === 'web') {
+                    alert('Match data has been reset.');
+                } else {
+                    Alert.alert('Success', 'Match data has been reset.');
                 }
-            ]
-        );
+                fetchMatches();
+            } catch (err) {
+                console.error("Reset match error:", err);
+                if (Platform.OS === 'web') {
+                    alert('Failed to reset match');
+                } else {
+                    Alert.alert('Error', 'Failed to reset match');
+                }
+            }
+        };
+
+        if (Platform.OS === 'web') {
+            if (window.confirm(confirmMsg)) {
+                await performReset();
+            }
+        } else {
+            Alert.alert(
+                'Reset Match',
+                confirmMsg,
+                [
+                    { text: 'No', style: 'cancel' },
+                    { text: 'Yes', style: 'destructive', onPress: performReset }
+                ]
+            );
+        }
     };
 
     const updateMatchStatus = async (matchId: string, newStatus: string) => {
