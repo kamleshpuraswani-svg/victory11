@@ -102,7 +102,14 @@ export default function MyTeams() {
 
     return (
         <View style={styles.container}>
-            <Stack.Screen options={{ title: matchTitle ? `My Teams: ${matchTitle}` : 'My Teams' }} />
+            <Stack.Screen options={{
+                title: matchTitle ? `My Teams: ${matchTitle}` : 'My Teams',
+                headerLeft: () => (
+                    <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 10 }}>
+                        <Ionicons name="arrow-back" size={24} color="#000" />
+                    </TouchableOpacity>
+                )
+            }} />
 
             {teams.length === 0 ? (
                 <View style={styles.center}>

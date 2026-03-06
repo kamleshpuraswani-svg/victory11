@@ -311,7 +311,17 @@ export default function TeamSelection() {
 
     return (
         <View style={styles.container}>
-            <Stack.Screen options={{ title: isRoleSelection ? 'Choose Captain & VC' : 'Select 11 Players' }} />
+            <Stack.Screen options={{
+                title: isRoleSelection ? 'Choose Captain & VC' : 'Select 11 Players',
+                headerLeft: () => (
+                    <TouchableOpacity
+                        onPress={() => isRoleSelection ? setIsRoleSelection(false) : router.back()}
+                        style={{ marginLeft: 10 }}
+                    >
+                        <Ionicons name="arrow-back" size={24} color="#000" />
+                    </TouchableOpacity>
+                )
+            }} />
 
             <View style={styles.statsContainer}>
                 {isRoleSelection ? (
