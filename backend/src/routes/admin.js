@@ -442,6 +442,11 @@ router.post('/matches/:matchId/process-ball', authenticateAdmin, async (req, res
             p.fantasyPoints = ptsRuns + ptsFours + ptsSixes + ptsWickets + ptsCatches + ptsStumpings;
         });
 
+        // CRITICAL: Mongoose does not detect changes to nested mixed objects automatically
+        // markModified tells Mongoose these fields have changed so they get saved
+        match.markModified('liveSettings');
+        match.markModified('playerStats');
+
         await match.save();
 
         // Update user teams
@@ -505,6 +510,8 @@ router.post('/matches/:matchId/undo-ball', authenticateAdmin, async (req, res) =
         // Clear the state so we can only undo once at a time
         match.liveSettings.lastBallState = null;
 
+        match.markModified('liveSettings');
+        match.markModified('playerStats');
         await match.save();
 
         // Recalculate fantasy points for teams based on reverted stats
@@ -559,6 +566,7 @@ router.post('/matches/:matchId/swap-strike', authenticateAdmin, async (req, res)
         match.liveSettings.strikerId = match.liveSettings.nonStrikerId;
         match.liveSettings.nonStrikerId = temp;
 
+        match.markModified('liveSettings');
         await match.save();
 
         const io = req.app.get('io');
@@ -590,6 +598,7 @@ router.post('/matches/:matchId/change-bowler', authenticateAdmin, async (req, re
             match.playerStats.push({ playerId: bowlerId });
         }
 
+        match.markModified('liveSettings');
         await match.save();
 
         const io = req.app.get('io');
