@@ -47,8 +47,8 @@ router.get('/players/:matchId', async (req, res) => {
         const teamB = playersData[match.teams[1]] || [];
 
         const allPlayers = [
-            ...teamA.map(p => ({ ...p, team: match.teams[0] })),
-            ...teamB.map(p => ({ ...p, team: match.teams[1] }))
+            ...teamA.map(p => ({ ...p, playerId: p.id, team: match.teams[0] })),
+            ...teamB.map(p => ({ ...p, playerId: p.id, team: match.teams[1] }))
         ];
 
         res.json({ players: allPlayers });

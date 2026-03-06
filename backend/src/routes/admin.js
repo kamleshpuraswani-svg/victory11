@@ -372,10 +372,17 @@ router.post('/matches/:matchId/process-ball', authenticateAdmin, async (req, res
             }
 
             if (newBatterId) {
+                // Create playerStat entry for new batter if they don't have one
+                if (!match.playerStats.find(ps => ps.playerId === newBatterId)) {
+                    match.playerStats.push({ playerId: newBatterId });
+                }
                 if (outPlayerId === settings.strikerId) {
                     settings.strikerId = newBatterId;
                 } else if (outPlayerId === settings.nonStrikerId) {
                     settings.nonStrikerId = newBatterId;
+                } else {
+                    // Default: dismissed batsman is striker so replace striker
+                    settings.strikerId = newBatterId;
                 }
             } else {
                 return res.status(400).json({ message: 'newBatterId required for WICKET action' });
