@@ -50,6 +50,14 @@ export default function LiveMatchKeypadScreen() {
     const [selectedBowler, setSelectedBowler] = useState<string | null>(null);
     const [pickingPlayer, setPickingPlayer] = useState<'STRIKER' | 'NON_STRIKER' | 'BOWLER' | null>(null);
 
+    const validateStep1 = () => {
+        if (!matchType || !totalOvers || !city || !ground || !ballType) {
+            Alert.alert('Required Fields', 'Please fill all mandatory fields marked with *');
+            return false;
+        }
+        return true;
+    };
+
 
     // Modals state for mid-innings (Wicket or Over End)
     const [wicketSequence, setWicketSequence] = useState<{
@@ -518,7 +526,7 @@ export default function LiveMatchKeypadScreen() {
 
                     {/* Wagon wheel toggle */}
                     <View style={[setupStyles.ruleRow, { marginVertical: 8 }]}>
-                        <View>
+                        <View style={{ flex: 1 }}>
                             <Text style={setupStyles.sectionHead}>Wagon wheel</Text>
                             <Text style={setupStyles.ruleLabel}>Show wagon wheel for 1s, 2s, &amp; 3s</Text>
                         </View>
@@ -562,11 +570,16 @@ export default function LiveMatchKeypadScreen() {
                     </TouchableOpacity>
 
                     {/* Bottom buttons */}
-                    <View style={setupStyles.bottomBtns}>
-                        <TouchableOpacity style={setupStyles.scheduleBtnGrey}>
+                    <View style={[setupStyles.bottomBtns, { marginTop: 40 }]}>
+                        <TouchableOpacity style={[setupStyles.scheduleBtnGrey, { flex: 0.8 }]}>
                             <Text style={setupStyles.scheduleBtnText}>Schedule match</Text>
                         </TouchableOpacity>
-                        <TouchableOpacity style={setupStyles.nextBtn} onPress={() => setSetupStep(2)}>
+                        <TouchableOpacity
+                            style={[setupStyles.nextBtn, { flex: 1.2 }]}
+                            onPress={() => {
+                                if (validateStep1()) setSetupStep(2);
+                            }}
+                        >
                             <Text style={setupStyles.nextBtnText}>Next (toss)</Text>
                         </TouchableOpacity>
                     </View>
