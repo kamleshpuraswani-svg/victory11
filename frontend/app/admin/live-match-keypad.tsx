@@ -48,6 +48,7 @@ export default function LiveMatchKeypadScreen() {
     const [selectedStriker, setSelectedStriker] = useState<string | null>(null);
     const [selectedNonStriker, setSelectedNonStriker] = useState<string | null>(null);
     const [selectedBowler, setSelectedBowler] = useState<string | null>(null);
+    const [pickingPlayer, setPickingPlayer] = useState<'STRIKER' | 'NON_STRIKER' | 'BOWLER' | null>(null);
 
 
     // Modals state for mid-innings (Wicket or Over End)
@@ -613,76 +614,136 @@ export default function LiveMatchKeypadScreen() {
                             <Text style={setupStyles.scheduleBtnText}>Back</Text>
                         </TouchableOpacity>
                         <TouchableOpacity style={[setupStyles.nextBtn, !tossWinner && { opacity: 0.4 }]}
-                            onPress={() => { if (tossWinner) setSetupStep(3); }}>
-                            <Text style={setupStyles.nextBtnText}>Next (players)</Text>
+                            onPress={() => {
+                                if (tossWinner) {
+                                    // Auto-set batting team based on toss
+                                    const batTeam = tossChoice === 'BAT' ? tossWinner : match.teams.find((t: string) => t !== tossWinner);
+                                    setSelectedBattingTeam(batTeam);
+                                    setSetupStep(3);
+                                }
+                            }}>
+                            <Text style={setupStyles.nextBtnText}>Let's play</Text>
                         </TouchableOpacity>
                     </View>
                 </ScrollView>
             );
         }
 
-        // --- STEP 3 : OPENING PLAYERS ---
+        // --- PLAYER PICKER SUB-VIEW ---
+        if (pickingPlayer) {
+            const teamToPickFrom = (pickingPlayer === 'STRIKER' || pickingPlayer === 'NON_STRIKER')
+                ? selectedBattingTeam
+                : match.teams.find((t: string) => t !== selectedBattingTeam);
+
+            const availablePlayers = players.filter(p => p.team === teamToPickFrom);
+
+            return (
+                <View style={styles.container}>
+                    <Stack.Screen options={{ title: `Select ${pickingPlayer.replace('_', ' ').toLowerCase()}` }} />
+                    <Text style={styles.selectPrompt}>Choose a player from {teamToPickFrom}</Text>
+                    <ScrollView>
+                        {availablePlayers.map(p => {
+                            const isAlreadySelected = p.playerId === selectedStriker || p.playerId === selectedNonStriker || p.playerId === selectedBowler;
+                            return (
+                                <TouchableOpacity
+                                    key={p.playerId}
+                                    style={[styles.listCard, isAlreadySelected && { opacity: 0.5 }]}
+                                    disabled={isAlreadySelected}
+                                    onPress={() => {
+                                        if (pickingPlayer === 'STRIKER') setSelectedStriker(p.playerId);
+                                        if (pickingPlayer === 'NON_STRIKER') setSelectedNonStriker(p.playerId);
+                                        if (pickingPlayer === 'BOWLER') setSelectedBowler(p.playerId);
+                                        setPickingPlayer(null);
+                                    }}
+                                >
+                                    <Text style={styles.listCardName}>{p.name}</Text>
+                                    {isAlreadySelected && <Text style={{ fontSize: 12, color: '#64748b' }}>Already selected</Text>}
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </ScrollView>
+                    <TouchableOpacity style={styles.cancelModalBtn} onPress={() => setPickingPlayer(null)}>
+                        <Text style={styles.cancelModalBtnText}>CANCEL</Text>
+                    </TouchableOpacity>
+                </View>
+            );
+        }
+
+        // --- STEP 3 : START INNINGS ---
+        const bowlingTeam = match.teams.find((t: string) => t !== selectedBattingTeam);
+        const strikerName = players.find(p => p.playerId === selectedStriker)?.name;
+        const nonStrikerName = players.find(p => p.playerId === selectedNonStriker)?.name;
+        const bowlerName = players.find(p => p.playerId === selectedBowler)?.name;
+
         return (
-            <ScrollView style={styles.container} contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 }]}>
+            <View style={styles.container}>
                 <Stack.Screen options={{
-                    title: 'Opening Players', headerStyle: { backgroundColor: '#00897b' }, headerTintColor: '#fff',
+                    title: 'Start innings', headerStyle: { backgroundColor: '#dc2626' }, headerTintColor: '#fff',
                     headerLeft: () => <TouchableOpacity onPress={() => setSetupStep(2)} style={{ paddingHorizontal: 14 }}><Text style={{ color: '#fff', fontSize: 16 }}>← Back</Text></TouchableOpacity>
                 }} />
 
-                <Text style={[setupStyles.sectionHead, { marginTop: 16, color: '#fbbf24' }]}>🏏 Select Batting Team</Text>
-                <View style={styles.row}>
-                    {match.teams.map((t: string) => (
-                        <TouchableOpacity key={t} style={[setupStyles.typeChip, selectedBattingTeam === t && setupStyles.typeChipActive]}
-                            onPress={() => setSelectedBattingTeam(t)}>
-                            <Text style={[setupStyles.typeChipText, selectedBattingTeam === t && setupStyles.typeChipTextActive]}>{t}</Text>
+                <ScrollView contentContainerStyle={[styles.scrollContent, { paddingBottom: 100 }]}>
+                    <Text style={[setupStyles.sectionHead, { marginTop: 20 }]}>Batting - {selectedBattingTeam}</Text>
+
+                    <View style={{ flexDirection: 'row', gap: 12, marginTop: 12 }}>
+                        {/* Striker Card */}
+                        <TouchableOpacity
+                            style={[setupStyles.ballBtn, { flex: 1, height: 160 }, selectedStriker && { borderColor: '#00897b', borderWidth: 2 }]}
+                            onPress={() => setPickingPlayer('STRIKER')}
+                        >
+                            <Text style={{ fontSize: 40, marginBottom: 10 }}>🏏</Text>
+                            <Text style={[setupStyles.ballLabel, { textAlign: 'center' }]}>
+                                {strikerName || 'Select striker'}
+                            </Text>
+                            {!selectedStriker && <Text style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>Required</Text>}
                         </TouchableOpacity>
-                    ))}
+
+                        {/* Non-Striker Card */}
+                        <TouchableOpacity
+                            style={[setupStyles.ballBtn, { flex: 1, height: 160 }, selectedNonStriker && { borderColor: '#00897b', borderWidth: 2 }]}
+                            onPress={() => setPickingPlayer('NON_STRIKER')}
+                        >
+                            <Text style={{ fontSize: 40, marginBottom: 10 }}>🏃</Text>
+                            <Text style={[setupStyles.ballLabel, { textAlign: 'center' }]}>
+                                {nonStrikerName || 'Select non-striker'}
+                            </Text>
+                            {!selectedNonStriker && <Text style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>Required</Text>}
+                        </TouchableOpacity>
+                    </View>
+
+                    <Text style={[setupStyles.sectionHead, { marginTop: 32 }]}>Bowling - {bowlingTeam}</Text>
+
+                    <View style={{ flexDirection: 'row', marginTop: 12 }}>
+                        {/* Bowler Card */}
+                        <TouchableOpacity
+                            style={[setupStyles.ballBtn, { width: '48.5%', height: 160 }, selectedBowler && { borderColor: '#00897b', borderWidth: 2 }]}
+                            onPress={() => setPickingPlayer('BOWLER')}
+                        >
+                            <Text style={{ fontSize: 40, marginBottom: 10 }}>🎳</Text>
+                            <Text style={[setupStyles.ballLabel, { textAlign: 'center' }]}>
+                                {bowlerName || 'Select bowler'}
+                            </Text>
+                            {!selectedBowler && <Text style={{ fontSize: 11, color: '#94a3b8', marginTop: 4 }}>Required</Text>}
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+
+                {/* Footer Action Buttons */}
+                <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#f1f5f9', padding: 16 }}>
+                    <View style={{ flexDirection: 'row', gap: 12 }}>
+                        <TouchableOpacity style={[setupStyles.scheduleBtnGrey, { height: 50 }]} onPress={() => setShowMatchRules(true)}>
+                            <Text style={setupStyles.scheduleBtnText}>Match rules</Text>
+                        </TouchableOpacity>
+                        <TouchableOpacity
+                            style={[setupStyles.nextBtn, { height: 50 }, (processing || !selectedStriker || !selectedNonStriker || !selectedBowler) && { opacity: 0.6 }]}
+                            onPress={handleStartInnings}
+                            disabled={processing || !selectedStriker || !selectedNonStriker || !selectedBowler}
+                        >
+                            {processing ? <ActivityIndicator color="#fff" /> : <Text style={setupStyles.nextBtnText}>Start scoring</Text>}
+                        </TouchableOpacity>
+                    </View>
                 </View>
-
-                {selectedBattingTeam && (
-                    <>
-                        <Text style={setupStyles.label}>Striker (on strike)</Text>
-                        {players.filter(p => p.team === selectedBattingTeam).map(p => (
-                            <TouchableOpacity key={p.playerId} style={[styles.listCard, selectedStriker === p.playerId && { borderColor: '#00897b', borderWidth: 2 }]}
-                                onPress={() => setSelectedStriker(p.playerId)}>
-                                <Text style={[styles.listCardName, selectedStriker === p.playerId && { color: '#00897b' }]}>{p.name}</Text>
-                                {selectedStriker === p.playerId && <Text style={{ color: '#00897b', fontWeight: '700' }}>✓ ON STRIKE</Text>}
-                            </TouchableOpacity>
-                        ))}
-
-                        <Text style={[setupStyles.label, { marginTop: 12 }]}>Non-Striker</Text>
-                        {players.filter(p => p.team === selectedBattingTeam && p.playerId !== selectedStriker).map(p => (
-                            <TouchableOpacity key={p.playerId} style={[styles.listCard, selectedNonStriker === p.playerId && { borderColor: '#0284c7', borderWidth: 2 }]}
-                                onPress={() => setSelectedNonStriker(p.playerId)}>
-                                <Text style={[styles.listCardName, selectedNonStriker === p.playerId && { color: '#0284c7' }]}>{p.name}</Text>
-                                {selectedNonStriker === p.playerId && <Text style={{ color: '#0284c7', fontWeight: '700' }}>✓ NON-STRIKER</Text>}
-                            </TouchableOpacity>
-                        ))}
-
-                        <Text style={[setupStyles.label, { marginTop: 12 }]}>Opening Bowler</Text>
-                        {players.filter(p => p.team !== selectedBattingTeam).map(p => (
-                            <TouchableOpacity key={p.playerId} style={[styles.listCard, selectedBowler === p.playerId && { borderColor: '#dc2626', borderWidth: 2 }]}
-                                onPress={() => setSelectedBowler(p.playerId)}>
-                                <Text style={[styles.listCardName, selectedBowler === p.playerId && { color: '#dc2626' }]}>{p.name}</Text>
-                                {selectedBowler === p.playerId && <Text style={{ color: '#dc2626', fontWeight: '700' }}>✓ OPENING BOWLER</Text>}
-                            </TouchableOpacity>
-                        ))}
-                    </>
-                )}
-
-                <View style={setupStyles.bottomBtns}>
-                    <TouchableOpacity style={setupStyles.scheduleBtnGrey} onPress={() => setSetupStep(2)}>
-                        <Text style={setupStyles.scheduleBtnText}>Back</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                        style={[setupStyles.nextBtn, processing && { opacity: 0.5 }]}
-                        onPress={handleStartInnings}
-                        disabled={processing}
-                    >
-                        {processing ? <ActivityIndicator color="#fff" /> : <Text style={setupStyles.nextBtnText}>Start Innings</Text>}
-                    </TouchableOpacity>
-                </View>
-            </ScrollView>
+            </View>
         );
     }
 
