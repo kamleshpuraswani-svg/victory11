@@ -51,8 +51,14 @@ export default function LiveMatchKeypadScreen() {
     const [pickingPlayer, setPickingPlayer] = useState<'STRIKER' | 'NON_STRIKER' | 'BOWLER' | null>(null);
 
     const validateStep1 = () => {
-        if (!matchType || !totalOvers || !city || !ground || !ballType) {
-            Alert.alert('Required Fields', 'Please fill all mandatory fields marked with *');
+        const isInvalid = !matchType || !totalOvers.trim() || !city.trim() || !ground.trim() || !ballType;
+        if (isInvalid) {
+            const msg = 'Please fill all mandatory fields marked with *';
+            if (Platform.OS === 'web') {
+                alert(msg);
+            } else {
+                Alert.alert('Required Fields', msg);
+            }
             return false;
         }
         return true;
@@ -571,7 +577,15 @@ export default function LiveMatchKeypadScreen() {
 
                     {/* Bottom buttons */}
                     <View style={[setupStyles.bottomBtns, { marginTop: 40 }]}>
-                        <TouchableOpacity style={[setupStyles.scheduleBtnGrey, { flex: 0.8 }]}>
+                        <TouchableOpacity
+                            style={[setupStyles.scheduleBtnGrey, { flex: 0.8 }]}
+                            onPress={() => {
+                                if (validateStep1()) {
+                                    // Placeholder for schedule logic
+                                    Alert.alert('Success', 'Match scheduled successfully!');
+                                }
+                            }}
+                        >
                             <Text style={setupStyles.scheduleBtnText}>Schedule match</Text>
                         </TouchableOpacity>
                         <TouchableOpacity
