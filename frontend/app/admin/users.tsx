@@ -282,11 +282,6 @@ export default function AdminUsersScreen() {
         </TouchableOpacity>
     );
 
-
-
-        </TouchableOpacity >
-    );
-
     return (
         <View style={styles.container}>
             <Stack.Screen
