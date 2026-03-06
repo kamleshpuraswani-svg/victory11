@@ -1169,7 +1169,7 @@ const setupStyles = StyleSheet.create({
 
     // Rule rows
     ruleCard: { backgroundColor: '#fff', borderRadius: 10, borderWidth: 1, borderColor: '#e5e7eb', padding: 12, marginVertical: 8 },
-    ruleRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
+    ruleRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10, justifyContent: 'space-between' },
     ruleLabel: { fontSize: 14, color: '#374151', flex: 1 },
     ruleCircle: { width: 28, height: 28, borderRadius: 14, borderWidth: 1.5, borderColor: '#d1d5db', justifyContent: 'center', alignItems: 'center', marginRight: 10 },
     ruleCircleText: { fontSize: 13, fontWeight: '700', color: '#374151' },
@@ -1187,9 +1187,9 @@ const setupStyles = StyleSheet.create({
     counterValue: { fontSize: 16, fontWeight: '700', paddingHorizontal: 12, color: '#111827' },
 
     // Bottom buttons
-    bottomBtns: { flexDirection: 'row', gap: 12, marginTop: 24, paddingHorizontal: 0 },
-    scheduleBtnGrey: { flex: 1, paddingVertical: 16, borderRadius: 8, alignItems: 'center', borderWidth: 1, borderColor: '#d1d5db', backgroundColor: '#f9fafb' },
-    scheduleBtnText: { color: '#6b7280', fontSize: 15, fontWeight: '700' },
-    nextBtn: { flex: 2, backgroundColor: '#00897b', paddingVertical: 16, borderRadius: 8, alignItems: 'center' },
-    nextBtnText: { color: '#fff', fontSize: 16, fontWeight: '800' }
+    bottomBtns: { flexDirection: 'row', gap: 12, marginTop: 32, paddingBottom: 20 },
+    scheduleBtnGrey: { flex: 1, height: 56, borderRadius: 12, alignItems: 'center', justifyContent: 'center', borderWidth: 1.5, borderColor: '#e2e8f0', backgroundColor: '#fff' },
+    scheduleBtnText: { color: '#64748b', fontSize: 16, fontWeight: '700' },
+    nextBtn: { flex: 1, backgroundColor: '#00897b', height: 56, borderRadius: 12, alignItems: 'center', justifyContent: 'center', shadowColor: '#00897b', shadowOpacity: 0.3, shadowRadius: 8, elevation: 4 },
+    nextBtnText: { color: '#fff', fontSize: 16, fontWeight: '800', letterSpacing: 0.5 }
 });
