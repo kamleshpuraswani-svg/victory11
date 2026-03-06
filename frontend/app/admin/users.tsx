@@ -96,6 +96,33 @@ export default function AdminUsersScreen() {
         }
     };
 
+    const handleResetMatch = async (matchId: string) => {
+        Alert.alert(
+            'Reset Match',
+            'This will clear all scoring data and reset the match to UPCOMING. Are you sure?',
+            [
+                { text: 'Cancel', style: 'cancel' },
+                {
+                    text: 'Reset',
+                    style: 'destructive',
+                    onPress: async () => {
+                        try {
+                            const token = await getAuthToken();
+                            await axios.post(`${API_URL}/admin/matches/${matchId}/reset`, {}, {
+                                headers: { Authorization: `Bearer ${token}` }
+                            });
+                            Alert.alert('Success', 'Match data has been reset.');
+                            fetchMatches();
+                        } catch (err) {
+                            console.error("Reset match error:", err);
+                            Alert.alert('Error', 'Failed to reset match');
+                        }
+                    }
+                }
+            ]
+        );
+    };
+
     const updateMatchStatus = async (matchId: string, newStatus: string) => {
         try {
             const token = await getAuthToken();
@@ -212,33 +239,40 @@ export default function AdminUsersScreen() {
                 </TouchableOpacity>
             </View>
 
-            {(item.status === 'LIVE' || item.status === 'COMPLETED') && (
-                <View style={styles.actionRowStyles}>
-                    {item.status === 'LIVE' && (
-                        <TouchableOpacity
-                            style={[styles.liveScoreBtn, { flex: 1 }]}
-                            onPress={() => router.push({
-                                pathname: '/admin/live-match-keypad',
-                                params: { matchId: item.id }
-                            })}
-                        >
-                            <Text style={styles.liveScoreBtnText}>▶ START SCORING</Text>
-                        </TouchableOpacity>
-                    )}
+            <View style={styles.actionRowStyles}>
+                {item.status === 'LIVE' && (
+                    <TouchableOpacity
+                        style={[styles.liveScoreBtn, { flex: 1, marginRight: 5 }]}
+                        onPress={() => router.push({
+                            pathname: '/admin/live-match-keypad',
+                            params: { matchId: item.id }
+                        })}
+                    >
+                        <Text style={styles.liveScoreBtnText}>▶ START SCORING</Text>
+                    </TouchableOpacity>
+                )}
 
-                    {item.status === 'COMPLETED' && (
-                        <TouchableOpacity
-                            style={[styles.scorecardBtn, { flex: 1 }]}
-                            onPress={() => router.push({
-                                pathname: '/admin/admin-scorecard',
-                                params: { matchId: item.id }
-                            })}
-                        >
-                            <Text style={styles.scorecardBtnText}>📝 VIEW & EDIT SCORECARD</Text>
-                        </TouchableOpacity>
-                    )}
-                </View>
+                {item.status === 'COMPLETED' && (
+                    <TouchableOpacity
+                        style={[styles.scorecardBtn, { flex: 1, marginRight: 5 }]}
+                        onPress={() => router.push({
+                            pathname: '/admin/admin-scorecard',
+                            params: { matchId: item.id }
+                        })}
+                    >
+                        <Text style={styles.scorecardBtnText}>📝 VIEW & EDIT SCORECARD</Text>
+                    </TouchableOpacity>
+                )}
+
+                <TouchableOpacity
+                    style={[styles.resetMatchBtn, { flex: 0.4 }]}
+                    onPress={() => handleResetMatch(item.id)}
+                >
+                    <Text style={styles.resetMatchBtnText}>🔄 RESET</Text>
+                </TouchableOpacity>
+            </View>
             )}
+
 
 
         </TouchableOpacity>
@@ -511,7 +545,6 @@ const styles = StyleSheet.create({
     activeStatusBtnCompleted: { backgroundColor: '#f0fdf4', borderColor: '#16a34a' },
     liveScoreBtn: {
         backgroundColor: '#1e293b',
-        marginTop: 12,
         paddingVertical: 10,
         borderRadius: 6,
         alignItems: 'center',
@@ -521,7 +554,7 @@ const styles = StyleSheet.create({
     liveScoreBtnText: {
         color: '#fbbf24',
         fontWeight: '900',
-        fontSize: 12
+        fontSize: 10
     },
     actionRowStyles: {
         flexDirection: 'row',
@@ -539,6 +572,20 @@ const styles = StyleSheet.create({
     scorecardBtnText: {
         color: '#0288d1',
         fontWeight: '900',
-        fontSize: 12
+        fontSize: 10
+    },
+    resetMatchBtn: {
+        backgroundColor: '#fee2e2',
+        paddingVertical: 10,
+        borderRadius: 6,
+        alignItems: 'center',
+        borderWidth: 1,
+        borderColor: '#ef4444'
+    },
+    resetMatchBtnText: {
+        color: '#ef4444',
+        fontWeight: '900',
+        fontSize: 10
     }
 });
+
