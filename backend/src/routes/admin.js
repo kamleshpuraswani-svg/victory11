@@ -202,45 +202,53 @@ router.put('/matches/:matchId/player-stats', authenticateAdmin, async (req, res)
 router.post('/matches/:matchId/reset', authenticateAdmin, async (req, res) => {
     try {
         const { matchId } = req.params;
-        const match = await Match.findOne({ customId: matchId });
-        if (!match) return res.status(404).json({ message: 'Match not found' });
+        console.log(`[RESET] Attempting to reset match: ${matchId}`);
 
-        match.status = 'UPCOMING';
-        match.liveSettings = {
-            strikerId: null,
-            nonStrikerId: null,
-            bowlerId: null,
-            currentOverBalls: [],
-            battingTeamId: null,
-            bowlingTeamId: null,
-            lastBallState: null,
-            awaitingNewBowler: false
-        };
-        match.liveScore = {
-            runs: 0, wickets: 0, overs: 0, balls: 0,
-            target: null, battingTeam: null, lastEvent: null
-        };
-        match.playerStats = [];
-        match.matchConfig = {
-            totalOvers: 20, oversPerBowler: 4,
-            matchType: 'LIMITED_OVERS', inningsNumber: 1,
-            wagonWheel: true, wideRuns: 1, noBallRuns: 1,
-            wideAsLegal: false, noBallAsLegal: false, powerPlay1End: 6
+        const resetData = {
+            status: 'UPCOMING',
+            liveSettings: {
+                strikerId: null,
+                nonStrikerId: null,
+                bowlerId: null,
+                currentOverBalls: [],
+                battingTeamId: null,
+                bowlingTeamId: null,
+                lastBallState: null,
+                awaitingNewBowler: false
+            },
+            liveScore: {
+                runs: 0, wickets: 0, overs: 0, balls: 0,
+                target: null, battingTeam: null, lastEvent: null
+            },
+            playerStats: [],
+            matchConfig: {
+                totalOvers: 20, oversPerBowler: 4,
+                matchType: 'LIMITED_OVERS', inningsNumber: 1,
+                wagonWheel: true, wideRuns: 1, noBallRuns: 1,
+                wideAsLegal: false, noBallAsLegal: false, powerPlay1End: 6
+            }
         };
 
-        match.markModified('liveSettings');
-        match.markModified('liveScore');
-        match.markModified('playerStats');
-        match.markModified('matchConfig');
-        await match.save();
+        const match = await Match.findOneAndUpdate(
+            { customId: matchId },
+            { $set: resetData },
+            { new: true }
+        );
+
+        if (!match) {
+            console.error(`[RESET] Match not found with customId: ${matchId}`);
+            return res.status(404).json({ message: 'Match not found' });
+        }
+
+        console.log(`[RESET] Successfully reset match: ${match.title} (${matchId})`);
 
         const io = req.app.get('io');
         if (io) io.emit('statsUpdate', { matchId });
 
         res.json({ message: 'Match reset successfully', match });
     } catch (err) {
-        console.error('Reset match error:', err);
-        res.status(500).json({ message: 'Server error resetting match' });
+        console.error('[RESET] Error resetting match:', err);
+        res.status(500).json({ message: 'Server error resetting match', error: err.message });
     }
 });
 
