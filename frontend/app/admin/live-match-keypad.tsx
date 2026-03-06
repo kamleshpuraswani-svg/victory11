@@ -21,6 +21,12 @@ export default function LiveMatchKeypadScreen() {
     const [selectedNonStriker, setSelectedNonStriker] = useState<string | null>(null);
     const [selectedBowler, setSelectedBowler] = useState<string | null>(null);
 
+    // Match configuration state
+    const [totalOvers, setTotalOvers] = useState('20');
+    const [powerplayOvers, setPowerplayOvers] = useState('6');
+    const [tossWinner, setTossWinner] = useState<string | null>(null);
+    const [tossChoice, setTossChoice] = useState<'BAT' | 'BOWL'>('BAT');
+
     // Modals state for mid-innings (Wicket or Over End)
     const [wicketSequence, setWicketSequence] = useState<{
         active: boolean;
@@ -65,23 +71,28 @@ export default function LiveMatchKeypadScreen() {
 
     const handleStartInnings = async () => {
         if (!selectedBattingTeam || !selectedStriker || !selectedNonStriker || !selectedBowler) {
-            Alert.alert("Incomplete", "Please select all opening players.");
+            Alert.alert("Incomplete", "Please select batting team, striker, non-striker, and opening bowler.");
             return;
         }
-
         const bowlingTeam = match.teams.find((t: string) => t !== selectedBattingTeam);
-
         try {
             setProcessing(true);
             const token = await getAuthToken();
-            const res = await axios.post(`${API_URL}/admin/matches/${matchId}/start-innings`, {
-                battingTeamId: selectedBattingTeam,
-                bowlingTeamId: bowlingTeam,
-                strikerId: selectedStriker,
-                nonStrikerId: selectedNonStriker,
-                bowlerId: selectedBowler
-            }, { headers: { Authorization: `Bearer ${token}` } });
-
+            const res = await axios.post(
+                `${API_URL}/admin/matches/${matchId}/start-innings`,
+                {
+                    battingTeamId: selectedBattingTeam,
+                    bowlingTeamId: bowlingTeam,
+                    strikerId: selectedStriker,
+                    nonStrikerId: selectedNonStriker,
+                    bowlerId: selectedBowler,
+                    totalOvers: Number(totalOvers) || 20,
+                    powerplayOvers: Number(powerplayOvers) || 6,
+                    tossWinner: tossWinner || '',
+                    tossChoice
+                },
+                { headers: { Authorization: `Bearer ${token}` } }
+            );
             setMatch(res.data.match);
             setSetupMode(false);
         } catch (error) {
@@ -223,7 +234,72 @@ export default function LiveMatchKeypadScreen() {
     if (setupMode) {
         return (
             <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
-                <Stack.Screen options={{ title: 'Start Innings', headerStyle: { backgroundColor: '#1e293b' }, headerTintColor: '#fff' }} />
+                <Stack.Screen options={{ title: 'Match Setup', headerStyle: { backgroundColor: '#1e293b' }, headerTintColor: '#fff' }} />
+
+                {/* ─── MATCH CONFIGURATION ─── */}
+                <Text style={[styles.sectionTitle, { color: '#fbbf24' }]}>⚙️ Match Configuration</Text>
+
+                <Text style={styles.sectionTitle}>Total Overs Per Side</Text>
+                <View style={styles.row}>
+                    {['5', '10', '15', '20', '25', '50'].map(o => (
+                        <TouchableOpacity
+                            key={o}
+                            style={[styles.chip, totalOvers === o && styles.chipActive]}
+                            onPress={() => setTotalOvers(o)}
+                        >
+                            <Text style={[styles.chipText, totalOvers === o && styles.chipTextActive]}>{o}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+
+                <Text style={styles.sectionTitle}>Powerplay Overs</Text>
+                <View style={styles.row}>
+                    {['0', '3', '6', '10'].map(o => (
+                        <TouchableOpacity
+                            key={o}
+                            style={[styles.chip, powerplayOvers === o && styles.chipActive]}
+                            onPress={() => setPowerplayOvers(o)}
+                        >
+                            <Text style={[styles.chipText, powerplayOvers === o && styles.chipTextActive]}>{o}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+
+                <Text style={styles.sectionTitle}>Toss Won By</Text>
+                <View style={styles.row}>
+                    {match.teams.map((t: string) => (
+                        <TouchableOpacity
+                            key={t}
+                            style={[styles.chip, tossWinner === t && styles.chipActive]}
+                            onPress={() => setTossWinner(t)}
+                        >
+                            <Text style={[styles.chipText, tossWinner === t && styles.chipTextActive]}>{t}</Text>
+                        </TouchableOpacity>
+                    ))}
+                </View>
+
+                {tossWinner && (
+                    <>
+                        <Text style={styles.sectionTitle}>{tossWinner} Chose To</Text>
+                        <View style={styles.row}>
+                            {[
+                                { label: '🏏 Bat First', value: 'BAT' },
+                                { label: '🎳 Bowl First', value: 'BOWL' }
+                            ].map(c => (
+                                <TouchableOpacity
+                                    key={c.value}
+                                    style={[styles.chip, tossChoice === c.value && styles.chipActive]}
+                                    onPress={() => setTossChoice(c.value as 'BAT' | 'BOWL')}
+                                >
+                                    <Text style={[styles.chipText, tossChoice === c.value && styles.chipTextActive]}>{c.label}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+                    </>
+                )}
+
+                {/* ─── PLAYER SELECTION ─── */}
+                <Text style={[styles.sectionTitle, { color: '#fbbf24', marginTop: 24 }]}>🏏 Players</Text>
 
                 <Text style={styles.sectionTitle}>Select Batting Team</Text>
                 <View style={styles.row}>
@@ -515,7 +591,16 @@ export default function LiveMatchKeypadScreen() {
     // MAIN KEYPAD VIEW
     return (
         <View style={styles.keypadContainer}>
-            <Stack.Screen options={{ title: 'Live Scoring', headerStyle: { backgroundColor: '#1e293b' }, headerTintColor: '#fbbf24' }} />
+            <Stack.Screen options={{
+                title: 'Live Scoring',
+                headerStyle: { backgroundColor: '#1e293b' },
+                headerTintColor: '#fbbf24',
+                headerLeft: () => (
+                    <TouchableOpacity onPress={() => router.back()} style={{ paddingHorizontal: 14, paddingVertical: 8 }}>
+                        <Text style={{ color: '#fbbf24', fontSize: 16, fontWeight: '700' }}>← Back</Text>
+                    </TouchableOpacity>
+                )
+            }} />
 
             {/* Scoreboard Header */}
             <View style={styles.scoreboard}>
@@ -523,7 +608,15 @@ export default function LiveMatchKeypadScreen() {
                     <Text style={styles.teamName}>{liveScore.battingTeam}</Text>
                     <Text style={styles.scoreText}>{liveScore.runs}/{liveScore.wickets}</Text>
                 </View>
-                <Text style={styles.oversText}>Overs: {liveScore.overs}.{liveScore.balls}</Text>
+                <Text style={styles.oversText}>
+                    Overs: {liveScore.overs}.{liveScore.balls}
+                    {match.matchConfig?.totalOvers ? ` / ${match.matchConfig.totalOvers}` : ''}
+                </Text>
+                {match.matchConfig?.tossWinner ? (
+                    <Text style={styles.targetText}>
+                        🪙 {match.matchConfig.tossWinner} won toss & chose to {match.matchConfig.tossChoice === 'BAT' ? 'Bat' : 'Bowl'}
+                    </Text>
+                ) : null}
                 {liveScore.target && <Text style={styles.targetText}>Target: {liveScore.target}</Text>}
             </View>
 

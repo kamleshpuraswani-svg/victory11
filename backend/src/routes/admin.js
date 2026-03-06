@@ -202,7 +202,8 @@ router.put('/matches/:matchId/player-stats', authenticateAdmin, async (req, res)
 router.post('/matches/:matchId/start-innings', authenticateAdmin, async (req, res) => {
     try {
         const { matchId } = req.params;
-        const { battingTeamId, bowlingTeamId, strikerId, nonStrikerId, bowlerId } = req.body;
+        const { battingTeamId, bowlingTeamId, strikerId, nonStrikerId, bowlerId,
+            totalOvers, tossWinner, tossChoice, powerplayOvers } = req.body;
 
         const match = await Match.findOne({ customId: matchId });
         if (!match) return res.status(404).json({ message: 'Match not found' });
@@ -213,12 +214,25 @@ router.post('/matches/:matchId/start-innings', authenticateAdmin, async (req, re
             strikerId,
             nonStrikerId,
             bowlerId,
-            currentOverBalls: []
+            currentOverBalls: [],
+            awaitingNewBowler: false
         };
+
+        // Save optional match configuration
+        if (totalOvers || tossWinner || powerplayOvers) {
+            match.matchConfig = {
+                totalOvers: totalOvers || 20,
+                tossWinner: tossWinner || '',
+                tossChoice: tossChoice || 'BAT',
+                powerplayOvers: powerplayOvers || 6,
+                inningsNumber: 1
+            };
+            match.markModified('matchConfig');
+        }
 
         // Ensure playerStats exist for these players
         [strikerId, nonStrikerId, bowlerId].forEach(id => {
-            if (!match.playerStats.find(ps => ps.playerId === id)) {
+            if (id && !match.playerStats.find(ps => ps.playerId === id)) {
                 match.playerStats.push({ playerId: id });
             }
         });

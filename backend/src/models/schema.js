@@ -37,6 +37,13 @@ const matchSchema = new Schema({
     battingTeam: { type: String },
     lastEvent: { type: String } // e.g., "4 runs by Sanskar"
   },
+  matchConfig: {
+    totalOvers: { type: Number, default: 20 },
+    tossWinner: { type: String },
+    tossChoice: { type: String, enum: ['BAT', 'BOWL'] },
+    powerplayOvers: { type: Number, default: 6 },
+    inningsNumber: { type: Number, default: 1 }
+  },
   liveSettings: {
     strikerId: String,
     nonStrikerId: String,
