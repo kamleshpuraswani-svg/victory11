@@ -212,11 +212,11 @@ export default function AdminUsersScreen() {
                 </TouchableOpacity>
             </View>
 
-            {(item.status === 'UPCOMING' || item.status === 'LIVE' || item.status === 'COMPLETED') && (
+            {(item.status === 'LIVE' || item.status === 'COMPLETED') && (
                 <View style={styles.actionRowStyles}>
-                    {item.status === 'UPCOMING' && (
+                    {item.status === 'LIVE' && (
                         <TouchableOpacity
-                            style={[styles.liveScoreBtn, { flex: 1, backgroundColor: '#00897b' }]}
+                            style={[styles.liveScoreBtn, { flex: 1 }]}
                             onPress={() => router.push({
                                 pathname: '/admin/live-match-keypad',
                                 params: { matchId: item.id }
@@ -226,31 +226,20 @@ export default function AdminUsersScreen() {
                         </TouchableOpacity>
                     )}
 
-                    {item.status === 'LIVE' && (
+                    {item.status === 'COMPLETED' && (
                         <TouchableOpacity
-                            style={[styles.liveScoreBtn, { flex: 1, marginRight: 5 }]}
-                            onPress={() => router.push({
-                                pathname: '/admin/live-match-keypad',
-                                params: { matchId: item.id }
-                            })}
-                        >
-                            <Text style={styles.liveScoreBtnText}>⚡ LIVE SCORE</Text>
-                        </TouchableOpacity>
-                    )}
-
-                    {(item.status === 'LIVE' || item.status === 'COMPLETED') && (
-                        <TouchableOpacity
-                            style={[styles.scorecardBtn, { flex: 1, marginLeft: item.status === 'LIVE' ? 5 : 0 }]}
+                            style={[styles.scorecardBtn, { flex: 1 }]}
                             onPress={() => router.push({
                                 pathname: '/admin/admin-scorecard',
                                 params: { matchId: item.id }
                             })}
                         >
-                            <Text style={styles.scorecardBtnText}>📝 PLAYER SCORECARD</Text>
+                            <Text style={styles.scorecardBtnText}>📝 VIEW & EDIT SCORECARD</Text>
                         </TouchableOpacity>
                     )}
                 </View>
             )}
+
 
         </TouchableOpacity>
     );
