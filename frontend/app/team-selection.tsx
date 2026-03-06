@@ -262,7 +262,7 @@ export default function TeamSelection() {
                 alert(successMsg);
                 router.replace({
                     pathname: '/my-teams',
-                    params: { matchId, matchTitle }
+                    params: { matchId, matchTitle, teamA, teamB }
                 });
             } else {
                 Alert.alert(
@@ -273,7 +273,7 @@ export default function TeamSelection() {
                             text: "OK",
                             onPress: () => router.replace({
                                 pathname: '/my-teams',
-                                params: { matchId, matchTitle }
+                                params: { matchId, matchTitle, teamA, teamB }
                             })
                         }
                     ]

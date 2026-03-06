@@ -8,7 +8,7 @@ import { getAuthToken } from '../utils/storage';
 import { API_URL } from '../constants/Config';
 
 export default function MyTeams() {
-    const { matchId, matchTitle } = useLocalSearchParams();
+    const { matchId, matchTitle, teamA, teamB } = useLocalSearchParams();
     const router = useRouter();
     const [teams, setTeams] = useState<any[]>([]);
     const [players, setPlayers] = useState<any[]>([]);
@@ -105,7 +105,21 @@ export default function MyTeams() {
             <Stack.Screen options={{
                 title: matchTitle ? `My Teams: ${matchTitle}` : 'My Teams',
                 headerLeft: () => (
-                    <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 10 }}>
+                    <TouchableOpacity
+                        onPress={() => {
+                            if (router.canGoBack()) {
+                                router.back();
+                            } else {
+                                // Fallback if history is empty (e.g. after router.replace)
+                                router.replace({
+                                    pathname: '/contests',
+                                    params: { matchId, teamA, teamB, matchTitle }
+                                });
+                            }
+                        }}
+                        style={{ padding: 10, marginLeft: 5 }}
+                        hitSlop={{ top: 20, bottom: 20, left: 20, right: 20 }}
+                    >
                         <Ionicons name="arrow-back" size={24} color="#000" />
                     </TouchableOpacity>
                 )
