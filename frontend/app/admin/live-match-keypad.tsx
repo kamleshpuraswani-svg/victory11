@@ -32,6 +32,11 @@ export default function LiveMatchKeypadScreen() {
     const [wideAsLegal, setWideAsLegal] = useState(false);
     const [noBallAsLegal, setNoBallAsLegal] = useState(false);
     const [powerPlay1End, setPowerPlay1End] = useState(6);
+    const [powerPlay2Start, setPowerPlay2Start] = useState<number | null>(null);
+    const [powerPlay2End, setPowerPlay2End] = useState<number | null>(null);
+    const [powerPlay3Start, setPowerPlay3Start] = useState<number | null>(null);
+    const [powerPlay3End, setPowerPlay3End] = useState<number | null>(null);
+    const [showPowerPlaySelection, setShowPowerPlaySelection] = useState(false);
     const [showMatchRules, setShowMatchRules] = useState(false);
 
     // Step 2 - Toss
@@ -112,6 +117,10 @@ export default function LiveMatchKeypadScreen() {
                     ballType, pitchType,
                     wagonWheel, wideRuns, noBallRuns, wideAsLegal, noBallAsLegal,
                     powerPlay1End,
+                    powerPlay2Start: powerPlay2Start || undefined,
+                    powerPlay2End: powerPlay2End || undefined,
+                    powerPlay3Start: powerPlay3Start || undefined,
+                    powerPlay3End: powerPlay3End || undefined,
                     tossWinner: tossWinner || '',
                     tossChoice
                 },
@@ -321,6 +330,95 @@ export default function LiveMatchKeypadScreen() {
             );
         }
 
+        // --- POWER PLAY SELECTION MODAL ---
+        if (showPowerPlaySelection) {
+            const oversArr = Array.from({ length: Number(totalOvers) || 20 }, (_, i) => i + 1);
+
+            return (
+                <View style={styles.container}>
+                    <ScrollView contentContainerStyle={styles.scrollContent}>
+                        <Stack.Screen options={{
+                            title: 'Select power play overs', headerStyle: { backgroundColor: '#dc2626' }, headerTintColor: '#fff',
+                            headerLeft: () => <TouchableOpacity onPress={() => setShowPowerPlaySelection(false)} style={{ paddingHorizontal: 14 }}><Text style={{ color: '#fff', fontSize: 16 }}>← Back</Text></TouchableOpacity>
+                        }} />
+
+                        {/* Power play 1 */}
+                        <Text style={setupStyles.sectionHead}>Power play 1</Text>
+                        <View style={[styles.row, { flexWrap: 'wrap', gap: 8, marginBottom: 20 }]}>
+                            {oversArr.map(num => (
+                                <TouchableOpacity
+                                    key={`pp1-${num}`}
+                                    style={[setupStyles.pitchChip, powerPlay1End === num && setupStyles.pitchChipActive]}
+                                    onPress={() => {
+                                        setPowerPlay1End(num);
+                                        // Reset others if তারা PP1 এর আগে
+                                        if (powerPlay2End && powerPlay2End <= num) setPowerPlay2End(null);
+                                        if (powerPlay3End && powerPlay3End <= (powerPlay2End || num)) setPowerPlay3End(null);
+                                    }}
+                                >
+                                    <Text style={[setupStyles.pitchChipText, powerPlay1End === num && { color: '#00897b', fontWeight: '700' }]}>{num}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        {/* Power play 2 */}
+                        <Text style={setupStyles.sectionHead}>Power play 2</Text>
+                        <View style={[styles.row, { flexWrap: 'wrap', gap: 8, marginBottom: 20 }]}>
+                            {oversArr.map(num => (
+                                <TouchableOpacity
+                                    key={`pp2-${num}`}
+                                    style={[
+                                        setupStyles.pitchChip,
+                                        powerPlay2End === num && setupStyles.pitchChipActive,
+                                        num <= powerPlay1End && { opacity: 0.3 }
+                                    ]}
+                                    disabled={num <= powerPlay1End}
+                                    onPress={() => {
+                                        setPowerPlay2End(num);
+                                        setPowerPlay2Start(powerPlay1End);
+                                        if (powerPlay3End && powerPlay3End <= num) setPowerPlay3End(null);
+                                    }}
+                                >
+                                    <Text style={[setupStyles.pitchChipText, powerPlay2End === num && { color: '#00897b', fontWeight: '700' }]}>{num}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        {/* Power play 3 */}
+                        <Text style={setupStyles.sectionHead}>Power play 3</Text>
+                        <View style={[styles.row, { flexWrap: 'wrap', gap: 8, marginBottom: 20 }]}>
+                            {oversArr.map(num => (
+                                <TouchableOpacity
+                                    key={`pp3-${num}`}
+                                    style={[
+                                        setupStyles.pitchChip,
+                                        powerPlay3End === num && setupStyles.pitchChipActive,
+                                        num <= (powerPlay2End || powerPlay1End) && { opacity: 0.3 }
+                                    ]}
+                                    disabled={num <= (powerPlay2End || powerPlay1End)}
+                                    onPress={() => {
+                                        setPowerPlay3End(num);
+                                        setPowerPlay3Start(powerPlay2End || powerPlay1End);
+                                    }}
+                                >
+                                    <Text style={[setupStyles.pitchChipText, powerPlay3End === num && { color: '#00897b', fontWeight: '700' }]}>{num}</Text>
+                                </TouchableOpacity>
+                            ))}
+                        </View>
+
+                        <Text style={{ fontSize: 13, color: '#666', fontStyle: 'italic', marginTop: 10 }}>
+                            *batting power play overs can be selected later during scoring from the settings.
+                        </Text>
+                    </ScrollView>
+                    <View style={{ padding: 20, backgroundColor: '#fff', borderTopWidth: 1, borderTopColor: '#eee' }}>
+                        <TouchableOpacity style={[styles.primaryBtn, { backgroundColor: '#00897b' }]} onPress={() => setShowPowerPlaySelection(false)}>
+                            <Text style={styles.primaryBtnText}>Done</Text>
+                        </TouchableOpacity>
+                    </View>
+                </View>
+            );
+        }
+
         // --- STEP 1 : MATCH CONFIGURATION ---
         if (setupStep === 1) {
             return (
@@ -384,9 +482,13 @@ export default function LiveMatchKeypadScreen() {
                     </View>
 
                     {/* Power Play */}
-                    <TouchableOpacity style={setupStyles.ppRow}>
+                    <TouchableOpacity style={setupStyles.ppRow} onPress={() => setShowPowerPlaySelection(true)}>
                         <Text style={[setupStyles.label, { color: '#00897b', fontWeight: '700' }]}>Power play  {'>'}</Text>
-                        <Text style={setupStyles.ppSub}>First {powerPlay1End} overs</Text>
+                        <Text style={setupStyles.ppSub}>
+                            {powerPlay3End ? `PP1: 1-${powerPlay1End}, PP2: ${powerPlay1End + 1}-${powerPlay2End}, PP3: ${powerPlay2End! + 1}-${powerPlay3End}` :
+                                powerPlay2End ? `PP1: 1-${powerPlay1End}, PP2: ${powerPlay1End + 1}-${powerPlay2End}` :
+                                    `First ${powerPlay1End} overs`}
+                        </Text>
                     </TouchableOpacity>
 
                     {/* City */}

@@ -48,7 +48,7 @@ const matchSchema = new Schema({
     // Ball & pitch
     ballType: { type: String, enum: ['TENNIS', 'LEATHER', 'OTHER'], default: 'LEATHER' },
     pitchType: { type: String, enum: ['ROUGH', 'CEMENT', 'TURF', 'ASTROTURF', 'MATTING'], default: 'TURF' },
-    // Power play configuration
+    // Powerplay settings
     powerPlay1End: { type: Number, default: 6 },
     powerPlay2Start: { type: Number },
     powerPlay2End: { type: Number },

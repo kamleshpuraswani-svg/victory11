@@ -225,7 +225,10 @@ router.post('/matches/:matchId/reset', authenticateAdmin, async (req, res) => {
                 totalOvers: 20, oversPerBowler: 4,
                 matchType: 'LIMITED_OVERS', inningsNumber: 1,
                 wagonWheel: true, wideRuns: 1, noBallRuns: 1,
-                wideAsLegal: false, noBallAsLegal: false, powerPlay1End: 6
+                wideAsLegal: false, noBallAsLegal: false,
+                powerPlay1End: 6,
+                powerPlay2Start: null, powerPlay2End: null,
+                powerPlay3Start: null, powerPlay3End: null
             }
         };
 
