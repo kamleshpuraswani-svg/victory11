@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, StyleSheet, Alert, ActivityIndicator, Platform } from 'react-native';
 
 interface Player {
     id: string;
@@ -251,28 +251,43 @@ export default function TeamSelection() {
                 }
             });
 
-            console.log("Submit Response:", response.data);
-            Alert.alert(
-                "Success",
-                teamId ? "Team updated!" : "Team saved!",
-                [
-                    {
-                        text: "OK",
-                        onPress: () => router.replace({
-                            pathname: '/my-teams',
-                            params: { matchId, matchTitle }
-                        })
-                    }
-                ]
-            );
+
+            console.log("Submit Response STATUS:", response.status);
+            console.log("Submit Response DATA:", response.data);
+
+            const successMsg = teamId ? "Team updated successfully!" : "Team saved successfully!";
+
+            if (Platform.OS === 'web') {
+                // On Web, standard alert is often more reliable than RN Alert polyfill
+                alert(successMsg);
+                router.replace({
+                    pathname: '/my-teams',
+                    params: { matchId, matchTitle }
+                });
+            } else {
+                Alert.alert(
+                    "Success",
+                    successMsg,
+                    [
+                        {
+                            text: "OK",
+                            onPress: () => router.replace({
+                                pathname: '/my-teams',
+                                params: { matchId, matchTitle }
+                            })
+                        }
+                    ]
+                );
+            }
         } catch (error: any) {
-            console.error("Submit error detail:", error);
+            console.error("!!! SUBMIT ERROR !!!", error);
             if (error.response) {
-                // Server responded with a status code outside the 2xx range
-                setErrorMsg(`Server Error: ${error.response.data?.message || error.response.statusText}`);
+                console.error("Error Response Data:", error.response.data);
+                console.error("Error Response Status:", error.response.status);
+                setErrorMsg(`Server Error (${error.response.status}): ${error.response.data?.message || error.response.statusText}`);
             } else if (error.request) {
-                // Request was made but no response was received
-                setErrorMsg("No response from server. Is the backend running at 5001?");
+                console.error("Error Request (No Response):", error.request);
+                setErrorMsg(`Network Error: No response from ${API_URL}. Check backend logs.`);
             } else {
                 setErrorMsg(`App Error: ${error.message}`);
             }
