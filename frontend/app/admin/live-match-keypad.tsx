@@ -813,7 +813,7 @@ export default function LiveMatchKeypadScreen() {
                 headerStyle: { backgroundColor: '#1e293b' },
                 headerTintColor: '#fbbf24',
                 headerLeft: () => (
-                    <TouchableOpacity onPress={() => router.back()} style={{ paddingHorizontal: 14, paddingVertical: 8 }}>
+                    <TouchableOpacity onPress={() => router.push('/admin/users')} style={{ paddingHorizontal: 14, paddingVertical: 8 }}>
                         <Text style={{ color: '#fbbf24', fontSize: 16, fontWeight: '700' }}>← Back</Text>
                     </TouchableOpacity>
                 )
