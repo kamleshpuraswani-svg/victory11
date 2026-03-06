@@ -3,6 +3,48 @@ const router = express.Router();
 const jwt = require('jsonwebtoken');
 const { User, Team, Match } = require('../models/schema');
 
+/**
+ * Standard Fantasy Cricket Point System (Victory11)
+ */
+const calculateFantasyPoints = (p, role) => {
+    let pts = 4; // Playing XI bonus
+
+    // Batting
+    const runs = p.runs || 0;
+    pts += runs;
+    pts += (p.fours || 0) * 1;
+    pts += (p.sixes || 0) * 2;
+
+    if (runs >= 100) pts += 16;
+    else if (runs >= 50) pts += 8;
+    else if (runs >= 30) pts += 4;
+
+    // Duck penalty: -2 if out for 0 (Bowlers are typically exempt in many systems, 
+    // but here we check role if available. If no role, we apply to everyone)
+    if (p.isDismissed && runs === 0 && role !== 'BOWLER') {
+        pts -= 2;
+    }
+
+    // Bowling
+    const wickets = p.wickets || 0;
+    pts += wickets * 25;
+    pts += (p.bowledLbwCount || 0) * 8;
+    pts += (p.maidens || 0) * 12;
+
+    if (wickets >= 5) pts += 16;
+    else if (wickets >= 4) pts += 8;
+    else if (wickets >= 3) pts += 4;
+
+    // Fielding
+    pts += (p.catches || 0) * 8;
+    if ((p.catches || 0) >= 3) pts += 4;
+    pts += (p.stumpings || 0) * 12;
+    pts += (p.directRunOuts || 0) * 12;
+    pts += (p.indirectRunOuts || 0) * 6;
+
+    return pts;
+};
+
 // Middleware to verify admin role
 const authenticateAdmin = async (req, res, next) => {
     try {
@@ -307,12 +349,32 @@ router.post('/matches/:matchId/start-innings', authenticateAdmin, async (req, re
             scorers: scorers || [],
             inningsNumber: 1
         };
+
+        // Populate Match.players if empty
+        if (!match.players || match.players.length === 0) {
+            const playersData = require('../data/players.json');
+            const teamA = playersData[match.teams[0]] || [];
+            const teamB = playersData[match.teams[1]] || [];
+
+            const allPlayers = [
+                ...teamA.map(p => ({ playerId: p.id, name: p.name, role: p.role, credits: p.credits })),
+                ...teamB.map(p => ({ playerId: p.id, name: p.name, role: p.role, credits: p.credits }))
+            ];
+            match.players = allPlayers;
+        }
         match.markModified('matchConfig');
 
-        // Ensure playerStats exist for these players
-        [strikerId, nonStrikerId, bowlerId].forEach(id => {
-            if (id && !match.playerStats.find(ps => ps.playerId === id)) {
-                match.playerStats.push({ playerId: id });
+        // Initialize playerStats for ALL players in Match.players if they don't exist
+        match.players.forEach(p => {
+            if (!match.playerStats.find(ps => ps.playerId === p.playerId)) {
+                match.playerStats.push({
+                    playerId: p.playerId,
+                    runs: 0, ballsFaced: 0, fours: 0, sixes: 0,
+                    overs: 0, bowledBalls: 0, runsConceded: 0, wickets: 0,
+                    maidens: 0, catches: 0, stumpings: 0,
+                    directRunOuts: 0, indirectRunOuts: 0, bowledLbwCount: 0, isDismissed: false,
+                    fantasyPoints: 4 // Start with 4 points for Playing XI
+                });
             }
         });
 
@@ -335,7 +397,13 @@ router.post('/matches/:matchId/start-innings', authenticateAdmin, async (req, re
 const getPlayerStat = (match, playerId) => {
     let stat = match.playerStats.find(ps => ps.playerId === playerId);
     if (!stat) {
-        stat = { playerId, runs: 0, ballsFaced: 0, fours: 0, sixes: 0, overs: 0, bowledBalls: 0, runsConceded: 0, wickets: 0, maidens: 0, catches: 0, stumpings: 0, fantasyPoints: 0 };
+        stat = {
+            playerId, runs: 0, ballsFaced: 0, fours: 0, sixes: 0,
+            overs: 0, bowledBalls: 0, runsConceded: 0, wickets: 0,
+            maidens: 0, catches: 0, stumpings: 0,
+            directRunOuts: 0, indirectRunOuts: 0, bowledLbwCount: 0, isDismissed: false,
+            fantasyPoints: 0
+        };
         match.playerStats.push(stat);
         stat = match.playerStats[match.playerStats.length - 1];
     }
@@ -377,12 +445,14 @@ router.post('/matches/:matchId/process-ball', authenticateAdmin, async (req, res
         let ballString = '';
         let isLegalBall = true;
         let requiresRotation = false;
+        let bowlerRunsInThisBall = 0; // Tracks runs against bowler (excludes Byes/Leg Byes)
 
         if (action === 'RUN') {
             const r = Number(runs) || 0;
             striker.runs += r;
             striker.ballsFaced += 1;
             bowler.runsConceded += r;
+            bowlerRunsInThisBall = r;
 
             if (r === 4) { striker.fours += 1; ballString = '4'; }
             else if (r === 6) { striker.sixes += 1; ballString = '6'; }
@@ -397,6 +467,7 @@ router.post('/matches/:matchId/process-ball', authenticateAdmin, async (req, res
                 isLegalBall = false;
                 match.liveScore.runs += (1 + extraRuns);
                 bowler.runsConceded += (1 + extraRuns);
+                bowlerRunsInThisBall = (1 + extraRuns);
                 ballString = extraRuns > 0 ? `${1 + extraRuns}Wd` : 'Wd';
                 if (extraRuns % 2 !== 0) requiresRotation = true;
 
@@ -404,6 +475,7 @@ router.post('/matches/:matchId/process-ball', authenticateAdmin, async (req, res
                 isLegalBall = false;
                 match.liveScore.runs += (1 + extraRuns);
                 bowler.runsConceded += (1 + extraRuns);
+                bowlerRunsInThisBall = (1 + extraRuns);
                 striker.ballsFaced += 1; // NB counts as ball faced
 
                 if (extraRuns > 0) {
@@ -432,12 +504,14 @@ router.post('/matches/:matchId/process-ball', authenticateAdmin, async (req, res
                 isLegalBall = false;
                 match.liveScore.runs += (1 + extraRuns);
                 bowler.runsConceded += (1 + extraRuns);
+                bowlerRunsInThisBall = (1 + extraRuns);
                 ballString = extraRuns > 0 ? `${1 + extraRuns}Wd+W` : 'Wd+W';
                 if (extraRuns % 2 !== 0) requiresRotation = true;
             } else if (extraType === 'NB') {
                 isLegalBall = false;
                 match.liveScore.runs += (1 + extraRuns);
                 bowler.runsConceded += (1 + extraRuns);
+                bowlerRunsInThisBall = (1 + extraRuns);
                 striker.ballsFaced += 1; // NB counts as ball faced
                 ballString = extraRuns > 0 ? `${extraRuns}Nb+W` : 'Nb+W';
                 if (extraRuns > 0) {
@@ -452,6 +526,7 @@ router.post('/matches/:matchId/process-ball', authenticateAdmin, async (req, res
                 if (wicketType === 'RUN_OUT' && extraRuns > 0) {
                     match.liveScore.runs += extraRuns;
                     bowler.runsConceded += extraRuns;
+                    bowlerRunsInThisBall = extraRuns;
                     striker.runs += extraRuns;
                     if (extraRuns === 4) striker.fours += 1;
                     if (extraRuns === 6) striker.sixes += 1;
@@ -464,12 +539,23 @@ router.post('/matches/:matchId/process-ball', authenticateAdmin, async (req, res
 
             if (wicketType !== 'RUN_OUT') {
                 bowler.wickets += 1;
+                if (wicketType === 'BOWLED' || wicketType === 'LBW') {
+                    bowler.bowledLbwCount += 1;
+                }
+            }
+
+            // Mark batsman as dismissed
+            striker.isDismissed = (outPlayerId === settings.strikerId);
+            if (outPlayerId === settings.nonStrikerId) {
+                const nonStriker = getPlayerStat(match, settings.nonStrikerId);
+                nonStriker.isDismissed = true;
             }
 
             if (fielderId) {
                 const fielder = getPlayerStat(match, fielderId);
                 if (wicketType === 'CAUGHT') fielder.catches += 1;
                 else if (wicketType === 'STUMPED') fielder.stumpings += 1;
+                else if (wicketType === 'RUN_OUT') fielder.directRunOuts += 1;
             }
 
             if (newBatterId) {
@@ -492,6 +578,7 @@ router.post('/matches/:matchId/process-ball', authenticateAdmin, async (req, res
 
         if (ballString) settings.currentOverBalls.push(ballString);
         match.liveScore.lastEvent = ballString;
+        settings.currentOverRuns += bowlerRunsInThisBall;
 
         if (isLegalBall) {
             match.liveScore.balls += 1;
@@ -520,7 +607,14 @@ router.post('/matches/:matchId/process-ball', authenticateAdmin, async (req, res
         let overJustCompleted = false;
         if (legalBallsInOver === 6) {
             overJustCompleted = true;
+
+            // AWARD MAIDEN
+            if (settings.currentOverRuns === 0) {
+                bowler.maidens += 1;
+            }
+
             settings.currentOverBalls = [];
+            settings.currentOverRuns = 0;
 
             // Rotate strike at end of over
             const temp2 = settings.strikerId;
@@ -533,14 +627,9 @@ router.post('/matches/:matchId/process-ball', authenticateAdmin, async (req, res
 
         // Recalculate fantasy points
         match.playerStats.forEach(p => {
-            const ptsRuns = p.runs || 0;
-            const ptsFours = p.fours * 1;
-            const ptsSixes = p.sixes * 2;
-            const ptsWickets = (p.wickets || 0) * 25;
-            const ptsCatches = (p.catches || 0) * 8;
-            const ptsStumpings = (p.stumpings || 0) * 12;
-
-            p.fantasyPoints = ptsRuns + ptsFours + ptsSixes + ptsWickets + ptsCatches + ptsStumpings;
+            const matchPlayer = match.players.find(mp => mp.playerId === p.playerId);
+            const role = matchPlayer ? matchPlayer.role : 'ALL_ROUNDER';
+            p.fantasyPoints = calculateFantasyPoints(p, role);
         });
 
         // CRITICAL: Mongoose does not detect changes to nested mixed objects automatically

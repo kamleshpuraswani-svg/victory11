@@ -76,7 +76,8 @@ const matchSchema = new Schema({
     battingTeamId: String,
     bowlingTeamId: String,
     lastBallState: { type: Schema.Types.Mixed },
-    awaitingNewBowler: { type: Boolean, default: false }
+    awaitingNewBowler: { type: Boolean, default: false },
+    currentOverRuns: { type: Number, default: 0 } // Tracks runs against bowler in current over (excl. B/LB)
   },
   playerStats: [{
     playerId: String,
@@ -94,6 +95,11 @@ const matchSchema = new Schema({
     // Fielding
     catches: { type: Number, default: 0 },
     stumpings: { type: Number, default: 0 },
+    directRunOuts: { type: Number, default: 0 },
+    indirectRunOuts: { type: Number, default: 0 },
+    // Advanced Fantasy Stats
+    bowledLbwCount: { type: Number, default: 0 },
+    isDismissed: { type: Boolean, default: false },
     // Calculation
     fantasyPoints: { type: Number, default: 0 }
   }]
